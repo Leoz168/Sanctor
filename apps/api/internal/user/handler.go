@@ -3,13 +3,21 @@ package user
 import (
 	"encoding/json"
 	"net/http"
+
+	"sanctor/internal/database"
 )
 
-// Initialize repository and service
+// Initialize repository and service (defaults to in-memory)
 var (
-	repo    = NewRepository()
-	service = NewService(repo)
+	repo    Repository = NewRepository()
+	service            = NewService(repo)
 )
+
+// InitWithDatabase initializes the user module with a database connection
+func InitWithDatabase(db *database.DB) {
+	repo = NewPostgresRepository(db)
+	service = NewService(repo)
+}
 
 // GetUsers returns all users
 func GetUsers(w http.ResponseWriter, r *http.Request) {

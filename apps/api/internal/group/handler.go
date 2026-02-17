@@ -5,16 +5,24 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"sanctor/internal/database"
 	"sanctor/internal/pubsub"
 )
 
-// Initialize repository, service, and messaging
+// Initialize repository, service, and messaging (defaults to in-memory)
 var (
-	repo      = NewRepository()
-	service   = NewService(repo)
-	ps        = pubsub.NewPubSub()
-	messaging = NewMessaging(ps, service)
+	repo      Repository = NewRepository()
+	service              = NewService(repo)
+	ps                   = pubsub.NewPubSub()
+	messaging            = NewMessaging(ps, service)
 )
+
+// InitWithDatabase initializes the group module with a database connection
+func InitWithDatabase(db *database.DB) {
+	repo = NewPostgresRepository(db)
+	service = NewService(repo)
+	messaging = NewMessaging(ps, service)
+}
 
 // GetGroups returns all groups
 func GetGroups(w http.ResponseWriter, r *http.Request) {
