@@ -51,16 +51,10 @@ func main() {
 		} else {
 			defer db.Close()
 
-			log.Println("Running database migrations...")
-			if err := db.Migrate(); err != nil {
-				log.Printf("⚠️  Failed to run migrations: %v", err)
-				log.Println("⚠️  Falling back to in-memory storage")
-			} else {
-				log.Println("Initializing modules with database...")
-				user.InitWithDatabase(db)
-				group.InitWithDatabase(db)
-				log.Println("✅ Database initialized successfully")
-			}
+			log.Println("Initializing modules with database...")
+			user.InitWithDatabase(db)
+			group.InitWithDatabase(db)
+			log.Println("✅ Database initialized successfully")
 		}
 	} else {
 		log.Println("⚠️  No DATABASE_URL found, using in-memory storage")
