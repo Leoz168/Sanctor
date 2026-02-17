@@ -5,14 +5,14 @@ A full-stack application with Go backend and React frontend, organized as a mono
 ## Architecture
 
 This monorepo contains:
-- **Backend** (`apps/backend`): Go REST API with clean architecture
+- **Backend** (`apps/api`): Go REST API with clean architecture
   - Domain-driven design with handler → service → repository layers
   - Modular structure: auth, user, post, ingestion, digestion
   - Middleware for CORS, logging, authentication
   - Database abstraction layer
   - Pub/Sub messaging system
   
-- **Frontend** (`apps/frontend`): React SPA with Vite
+- **Frontend** (`apps/web`): React SPA with Vite
   - Modern React with hooks and functional components
   - Zustand for state management
   - Axios for API integration with interceptors
@@ -79,7 +79,7 @@ make backend-dev
 # or
 npm run backend:dev
 # or manually:
-cd apps/backend && go run main.go
+cd apps/api && go run main.go
 ```
 
 **Frontend:**
@@ -88,7 +88,7 @@ make frontend-dev
 # or
 npm run frontend:dev
 # or manually:
-cd apps/frontend && npm install && ├── docker-compose.yml        # Production
+cd apps/web && npm install && ├── docker-compose.yml        # Production
 ├── docker-compose.dev.yml    # Development
 ├── package.json              # Monorepo scripts
 ├── Makefile                  # Build commands

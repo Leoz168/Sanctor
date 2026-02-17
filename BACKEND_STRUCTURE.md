@@ -5,7 +5,7 @@ Your backend now follows a clean, organized Go project layout:
 ## ✅ Directory Structure
 
 ```
-apps/backend/
+apps/api/
 ├── cmd/
 │   └── api/
 │       └── main.go              # Application entry point
@@ -98,7 +98,7 @@ docker compose up --build
 
 ### Local
 ```bash
-cd apps/backend
+cd apps/api
 go run cmd/api/main.go
 ```
 

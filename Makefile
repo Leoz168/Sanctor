@@ -26,16 +26,16 @@ clean: ## Remove all containers, images, and volumes
 	docker-compose down -v --rmi all
 
 backend-dev: ## Run backend locally (requires Go)
-	cd apps/backend && go run main.go
+	cd apps/api && go run main.go
 
 frontend-dev: ## Run frontend locally (requires Node.js)
-	cd apps/frontend && npm start
+	cd apps/web && npm start
 
 frontend-install: ## Install frontend dependencies
-	cd apps/frontend && npm install
+	cd apps/web && npm install
 
 test-backend: ## Run backend tests
-	cd apps/backend && go test ./...
+	cd apps/api && go test ./...
 
 test-frontend: ## Run frontend tests
-	cd apps/frontend && npm test
+	cd apps/web && npm test

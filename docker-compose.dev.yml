@@ -1,13 +1,13 @@
 services:
   backend:
     build:
-      context: ./apps/backend
+      context: ./apps/api
       dockerfile: Dockerfile
     container_name: sanctor-backend-dev
     ports:
       - "8080:8080"
     volumes:
-      - ./apps/backend:/app
+      - ./apps/api:/app
     environment:
       - GO_ENV=development
       - PORT=8080
@@ -23,7 +23,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./apps/frontend:/app
+      - ./apps/web:/app
       - /app/node_modules
     environment:
       - REACT_APP_API_URL=http://localhost:8080

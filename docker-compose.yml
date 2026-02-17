@@ -1,7 +1,7 @@
 services:
   backend:
     build:
-      context: ./apps/backend
+      context: ./apps/api
       dockerfile: Dockerfile
     container_name: sanctor-backend
     ports:
@@ -15,7 +15,7 @@ services:
 
   frontend:
     build:
-      context: ./apps/frontend
+      context: ./apps/web
       dockerfile: Dockerfile
     container_name: sanctor-frontend
     ports:
