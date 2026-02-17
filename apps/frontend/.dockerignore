@@ -1,0 +1,38 @@
+# Git files
+.git
+.gitignore
+
+# Dependencies
+node_modules
+
+# Testing
+coverage
+.nyc_output
+
+# Production
+build
+dist
+
+# Documentation
+*.md
+README.md
+
+# Development files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.vscode
+.idea
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
