@@ -1,0 +1,28 @@
+# Git files
+.git
+.gitignore
+
+# Documentation
+*.md
+README.md
+
+# Testing
+*_test.go
+testdata
+
+# Development files
+.env
+.env.local
+.vscode
+.idea
+
+# Build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+tmp/
+
+# Vendor (if not using go modules)
+vendor/

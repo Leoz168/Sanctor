@@ -1,0 +1,37 @@
+services:
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: sanctor-backend-dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./apps/backend:/app
+    environment:
+      - GO_ENV=development
+      - PORT=8080
+    networks:
+      - sanctor-network
+    restart: unless-stopped
+    command: go run cmd/api/main.go
+
+  frontend:
+    image: node:18-alpine
+    container_name: sanctor-frontend-dev
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080
+    networks:
+      - sanctor-network
+    restart: unless-stopped
+    command: sh -c \"npm install && npm run dev -- --host\"
+
+networks:
+  sanctor-network:
+    driver: bridge
