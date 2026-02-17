@@ -10,13 +10,13 @@
     "build": "docker-compose build",
     "down": "docker-compose down",
     "logs": "docker-compose logs -f",
-    "backend:dev": "cd apps/backend && go run cmd/api/main.go",
-    "frontend:dev": "cd apps/frontend && npm run dev",
-    "frontend:install": "cd apps/frontend && npm install"
+    "backend:dev": "cd apps/api && go run cmd/api/main.go",
+    "frontend:dev": "cd apps/web && npm run dev",
+    "frontend:install": "cd apps/web && npm install"
   },
   "workspaces": [
-    "apps/backend",
-    "apps/frontend",
+    "apps/api",
+    "apps/web",
     "packages/*"
   ],
   "author": "",

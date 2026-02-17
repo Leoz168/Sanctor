@@ -77,7 +77,7 @@ frontend/
 ### Local Development
 
 ```bash
-cd apps/frontend
+cd apps/web
 npm install
 npm run dev
 ```

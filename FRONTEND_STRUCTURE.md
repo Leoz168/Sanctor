@@ -5,7 +5,7 @@ Your frontend has been successfully restructured with Vite and modern best pract
 ## ✅ Directory Structure
 
 ```
-apps/frontend/
+apps/web/
 ├── src/
 │   ├── pages/                    # Page components (routes)
 │   │   └── Home.jsx              # ✓ Main landing page
@@ -143,7 +143,7 @@ import { Loading } from '@components'
 
 ### Start Development Server
 ```bash
-cd apps/frontend
+cd apps/web
 npm install
 npm run dev
 ```
