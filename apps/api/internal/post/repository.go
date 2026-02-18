@@ -13,24 +13,26 @@ func NewRepository() *Repository {
 }
 
 // Create adds a new post
-func (r *Repository) Create(post *Post) error {
+func (r *Repository) Create(post *Post) (*Post, error) {
 	r.posts[post.ID] = post
-	return nil
+	return post, nil
 }
 
 // FindByID retrieves a post by ID
 func (r *Repository) FindByID(id string) (*Post, error) {
-	// TODO: Implement find by ID
+	if post, ok := r.posts[id]; ok {
+		return post, nil
+	}
 	return nil, nil
 }
 
 // FindAll retrieves all posts
-func (r *Repository) FindAll() []*Post {
+func (r *Repository) FindAll() ([]*Post, error) {
 	posts := make([]*Post, 0, len(r.posts))
 	for _, post := range r.posts {
 		posts = append(posts, post)
 	}
-	return posts
+	return posts, nil
 }
 
 // Update updates a post

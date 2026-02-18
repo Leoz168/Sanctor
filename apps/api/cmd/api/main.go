@@ -43,13 +43,16 @@ func main() {
 	}
 
 	// Initialize database connection if DATABASE_URL is set
+	var db *database.DB
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL != "" {
 		log.Println("Connecting to database...")
-		db, err := database.NewFromURL(databaseURL)
+		var err error
+		db, err = database.NewFromURL(databaseURL)
 		if err != nil {
 			log.Printf("⚠️  Failed to connect to database: %v", err)
 			log.Println("⚠️  Falling back to in-memory storage")
+			db = nil
 		} else {
 			defer db.Close()
 
@@ -93,6 +96,24 @@ func main() {
 
 	// Group messaging endpoints
 	http.HandleFunc("/api/groups/messages/send", group.SendGroupMessage)
+
+	// Post endpoints - use database if available
+	var postService *post.Service
+	if db != nil {
+		postGormRepo := post.NewGormRepository(db)
+		postService = post.NewServiceWithGorm(postGormRepo)
+		log.Println("✅ Posts initialized with database")
+	} else {
+		postRepo := post.NewRepository()
+		postService = post.NewService(postRepo)
+		log.Println("⚠️  Posts using in-memory storage")
+	}
+	postHandler := post.NewHandler(postService)
+	http.HandleFunc("/api/posts", postHandler.GetPosts)
+	http.HandleFunc("/api/posts/get", postHandler.GetPost)
+	http.HandleFunc("/api/posts/create", postHandler.CreatePost)
+	http.HandleFunc("/api/posts/update", postHandler.UpdatePost)
+	http.HandleFunc("/api/posts/delete", postHandler.DeletePost)
 
 	fmt.Printf("Server starting on port %s...\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

@@ -34,15 +34,29 @@ type Post struct {
 
 // CreatePostRequest represents post creation data
 type CreatePostRequest struct {
-	UserID  string `json:"userId"`
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	PropertyType string `json:"propertyType"`
+	UserID        string `json:"userId"`
+	Address       string `json:"address"`
+	IsSublet      bool   `json:"isSublet"`
+	Price         string `json:"price"`
+	Rooms         string `json:"bedrooms"`
+	RoomsOccupied int    `json:"roomsOccupied"`
+	Bathrooms     string `json:"bathrooms"`
+	Description   string `json:"description"`
+	Gender        string `json:"gender"`
+	PropertyType  string `json:"propertyType"`
+	Term          Term   `json:"terms"`
 }
 
 // UpdatePostRequest represents post update data
 type UpdatePostRequest struct {
-	Title   string `json:"title,omitempty"`
-	Content string `json:"content,omitempty"`
-	Status  string `json:"status,omitempty"`
+	Address       *string `json:"address,omitempty"`
+	IsSublet      *bool   `json:"isSublet,omitempty"`
+	Price         *string `json:"price,omitempty"`
+	Rooms         *string `json:"bedrooms,omitempty"`
+	RoomsOccupied *int    `json:"roomsOccupied,omitempty"`
+	Bathrooms     *string `json:"bathrooms,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	Gender        *string `json:"gender,omitempty"`
+	PropertyType  *string `json:"propertyType,omitempty"`
+	Term          *Term   `json:"terms,omitempty"`
 }

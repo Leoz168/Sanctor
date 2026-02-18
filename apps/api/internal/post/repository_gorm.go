@@ -19,8 +19,11 @@ func NewGormRepository(db *database.DB) *GormRepository {
 }
 
 // Create adds a new post
-func (r *GormRepository) Create(post *Post) error {
-	return r.db.Create(post).Error
+func (r *GormRepository) Create(post *Post) (*Post, error) {
+	if err := r.db.Create(post).Error; err != nil {
+		return nil, err
+	}
+	return post, nil
 }
 
 // FindByID retrieves a post by ID
