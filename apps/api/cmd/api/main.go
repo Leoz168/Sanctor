@@ -8,6 +8,8 @@ import (
 	"os"
 	"sanctor/internal/database"
 	"sanctor/internal/group"
+	"sanctor/internal/picture"
+	"sanctor/internal/post"
 	"sanctor/internal/user"
 )
 
@@ -50,6 +52,11 @@ func main() {
 			log.Println("⚠️  Falling back to in-memory storage")
 		} else {
 			defer db.Close()
+
+			// Run auto-migration for all models
+			if err := db.AutoMigrate(&user.User{}, &group.Group{}, &group.UserGroup{}, &post.Post{}, &picture.Picture{}); err != nil {
+				log.Printf("⚠️  Failed to migrate database: %v", err)
+			}
 
 			log.Println("Initializing modules with database...")
 			user.InitWithDatabase(db)
