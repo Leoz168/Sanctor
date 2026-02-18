@@ -9,11 +9,11 @@ import (
 
 // Service handles business logic for group operations
 type Service struct {
-	repo *Repository
+	repo Repository
 }
 
 // NewService creates a new group service
-func NewService(repo *Repository) *Service {
+func NewService(repo Repository) *Service {
 	return &Service{repo: repo}
 }
 

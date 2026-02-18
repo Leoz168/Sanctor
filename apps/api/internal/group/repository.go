@@ -5,17 +5,17 @@ import (
 	"sync"
 )
 
-// Repository handles data access for groups
-type Repository struct {
+// InMemoryRepository handles data access for groups in memory
+type InMemoryRepository struct {
 	groups      map[string]*Group      // groupID -> Group
 	userGroups  map[string][]*UserGroup // userID -> []UserGroup
 	groupUsers  map[string][]*UserGroup // groupID -> []UserGroup
 	mu          sync.RWMutex
 }
 
-// NewRepository creates a new group repository
-func NewRepository() *Repository {
-	return &Repository{
+// NewRepository creates a new in-memory group repository
+func NewRepository() Repository {
+	return &InMemoryRepository{
 		groups:     make(map[string]*Group),
 		userGroups: make(map[string][]*UserGroup),
 		groupUsers: make(map[string][]*UserGroup),
@@ -23,7 +23,7 @@ func NewRepository() *Repository {
 }
 
 // Create creates a new group
-func (r *Repository) Create(group *Group) error {
+func (r *InMemoryRepository) Create(group *Group) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -32,7 +32,7 @@ func (r *Repository) Create(group *Group) error {
 }
 
 // FindByID finds a group by ID
-func (r *Repository) FindByID(id string) (*Group, error) {
+func (r *InMemoryRepository) FindByID(id string) (*Group, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -44,7 +44,7 @@ func (r *Repository) FindByID(id string) (*Group, error) {
 }
 
 // FindAll returns all groups
-func (r *Repository) FindAll() []*Group {
+func (r *InMemoryRepository) FindAll() []*Group {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -56,7 +56,7 @@ func (r *Repository) FindAll() []*Group {
 }
 
 // Update updates an existing group
-func (r *Repository) Update(group *Group) error {
+func (r *InMemoryRepository) Update(group *Group) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -68,7 +68,7 @@ func (r *Repository) Update(group *Group) error {
 }
 
 // Delete deletes a group and its memberships
-func (r *Repository) Delete(id string) error {
+func (r *InMemoryRepository) Delete(id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -97,7 +97,7 @@ func (r *Repository) Delete(id string) error {
 }
 
 // AddUserToGroup adds a user to a group
-func (r *Repository) AddUserToGroup(userGroup *UserGroup) error {
+func (r *InMemoryRepository) AddUserToGroup(userGroup *UserGroup) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -121,7 +121,7 @@ func (r *Repository) AddUserToGroup(userGroup *UserGroup) error {
 }
 
 // RemoveUserFromGroup removes a user from a group
-func (r *Repository) RemoveUserFromGroup(userID, groupID string) error {
+func (r *InMemoryRepository) RemoveUserFromGroup(userID, groupID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -151,7 +151,7 @@ func (r *Repository) RemoveUserFromGroup(userID, groupID string) error {
 }
 
 // GetGroupMembers returns all users in a group
-func (r *Repository) GetGroupMembers(groupID string) ([]*UserGroup, error) {
+func (r *InMemoryRepository) GetGroupMembers(groupID string) ([]*UserGroup, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -163,7 +163,7 @@ func (r *Repository) GetGroupMembers(groupID string) ([]*UserGroup, error) {
 }
 
 // GetUserGroups returns all groups a user belongs to
-func (r *Repository) GetUserGroups(userID string) []*UserGroup {
+func (r *InMemoryRepository) GetUserGroups(userID string) []*UserGroup {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -171,14 +171,14 @@ func (r *Repository) GetUserGroups(userID string) []*UserGroup {
 }
 
 // IsUserInGroup checks if a user is in a group (exported version)
-func (r *Repository) IsUserInGroup(userID, groupID string) bool {
+func (r *InMemoryRepository) IsUserInGroup(userID, groupID string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return r.isUserInGroup(userID, groupID)
 }
 
 // isUserInGroup checks if a user is in a group (internal, no lock)
-func (r *Repository) isUserInGroup(userID, groupID string) bool {
+func (r *InMemoryRepository) isUserInGroup(userID, groupID string) bool {
 	for _, ug := range r.userGroups[userID] {
 		if ug.GroupID == groupID {
 			return true
@@ -188,14 +188,14 @@ func (r *Repository) isUserInGroup(userID, groupID string) bool {
 }
 
 // GetMemberCount returns the number of members in a group
-func (r *Repository) GetMemberCount(groupID string) int {
+func (r *InMemoryRepository) GetMemberCount(groupID string) int {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return len(r.groupUsers[groupID])
 }
 
 // GetUserRole returns the role of a user in a group
-func (r *Repository) GetUserRole(userID, groupID string) (string, error) {
+func (r *InMemoryRepository) GetUserRole(userID, groupID string) (string, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

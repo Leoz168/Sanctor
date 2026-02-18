@@ -8,6 +8,8 @@ services:
       - "8080:8080"
     volumes:
       - ./apps/api:/app
+    env_file:
+      - .env
     environment:
       - GO_ENV=development
       - PORT=8080

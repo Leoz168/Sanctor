@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sanctor/internal/database"
 	"sanctor/internal/group"
 	"sanctor/internal/user"
 )
@@ -37,6 +38,26 @@ func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
+	}
+
+	// Initialize database connection if DATABASE_URL is set
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL != "" {
+		log.Println("Connecting to database...")
+		db, err := database.NewFromURL(databaseURL)
+		if err != nil {
+			log.Printf("⚠️  Failed to connect to database: %v", err)
+			log.Println("⚠️  Falling back to in-memory storage")
+		} else {
+			defer db.Close()
+
+			log.Println("Initializing modules with database...")
+			user.InitWithDatabase(db)
+			group.InitWithDatabase(db)
+			log.Println("✅ Database initialized successfully")
+		}
+	} else {
+		log.Println("⚠️  No DATABASE_URL found, using in-memory storage")
 	}
 
 	// Health check endpoints

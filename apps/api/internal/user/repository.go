@@ -2,20 +2,20 @@ package user
 
 import "errors"
 
-// Repository handles data persistence for users
-type Repository struct {
+// InMemoryRepository handles data persistence for users in memory
+type InMemoryRepository struct {
 	users map[string]*User
 }
 
-// NewRepository creates a new user repository
-func NewRepository() *Repository {
-	return &Repository{
+// NewRepository creates a new in-memory user repository
+func NewRepository() Repository {
+	return &InMemoryRepository{
 		users: make(map[string]*User),
 	}
 }
 
 // Create adds a new user to the repository
-func (r *Repository) Create(user *User) error {
+func (r *InMemoryRepository) Create(user *User) error {
 	if user == nil {
 		return errors.New("user cannot be nil")
 	}
@@ -24,7 +24,7 @@ func (r *Repository) Create(user *User) error {
 }
 
 // FindByID retrieves a user by ID
-func (r *Repository) FindByID(id string) (*User, error) {
+func (r *InMemoryRepository) FindByID(id string) (*User, error) {
 	user, exists := r.users[id]
 	if !exists {
 		return nil, errors.New("user not found")
@@ -33,7 +33,7 @@ func (r *Repository) FindByID(id string) (*User, error) {
 }
 
 // FindAll retrieves all users
-func (r *Repository) FindAll() []*User {
+func (r *InMemoryRepository) FindAll() []*User {
 	userList := make([]*User, 0, len(r.users))
 	for _, user := range r.users {
 		userList = append(userList, user)
@@ -42,7 +42,7 @@ func (r *Repository) FindAll() []*User {
 }
 
 // Update updates an existing user
-func (r *Repository) Update(user *User) error {
+func (r *InMemoryRepository) Update(user *User) error {
 	if user == nil {
 		return errors.New("user cannot be nil")
 	}
@@ -54,7 +54,7 @@ func (r *Repository) Update(user *User) error {
 }
 
 // Delete removes a user from the repository
-func (r *Repository) Delete(id string) error {
+func (r *InMemoryRepository) Delete(id string) error {
 	if _, exists := r.users[id]; !exists {
 		return errors.New("user not found")
 	}
@@ -63,7 +63,7 @@ func (r *Repository) Delete(id string) error {
 }
 
 // ExistsByEmail checks if a user with the given email exists
-func (r *Repository) ExistsByEmail(email string) bool {
+func (r *InMemoryRepository) ExistsByEmail(email string) bool {
 	for _, user := range r.users {
 		if user.Email == email {
 			return true
@@ -73,7 +73,7 @@ func (r *Repository) ExistsByEmail(email string) bool {
 }
 
 // ExistsByUsername checks if a user with the given username exists
-func (r *Repository) ExistsByUsername(username string) bool {
+func (r *InMemoryRepository) ExistsByUsername(username string) bool {
 	for _, user := range r.users {
 		if user.Username == username {
 			return true
@@ -83,7 +83,7 @@ func (r *Repository) ExistsByUsername(username string) bool {
 }
 
 // FindByEmail retrieves a user by email
-func (r *Repository) FindByEmail(email string) (*User, error) {
+func (r *InMemoryRepository) FindByEmail(email string) (*User, error) {
 	for _, user := range r.users {
 		if user.Email == email {
 			return user, nil
@@ -93,7 +93,7 @@ func (r *Repository) FindByEmail(email string) (*User, error) {
 }
 
 // FindByUsername retrieves a user by username
-func (r *Repository) FindByUsername(username string) (*User, error) {
+func (r *InMemoryRepository) FindByUsername(username string) (*User, error) {
 	for _, user := range r.users {
 		if user.Username == username {
 			return user, nil

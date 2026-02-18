@@ -9,11 +9,11 @@ import (
 
 // Service handles business logic for user operations
 type Service struct {
-	repo *Repository
+	repo Repository
 }
 
 // NewService creates a new user service
-func NewService(repo *Repository) *Service {
+func NewService(repo Repository) *Service {
 	return &Service{repo: repo}
 }
 
