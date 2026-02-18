@@ -1,26 +1,28 @@
 package user
 
-import "time"
+import (
+	"time"
+)
 
 // User represents a user in the system
 type User struct {
-	ID           string    `json:"id"`
-	Email        string    `json:"email"`
-	Username     string    `json:"username"`
-	FirstName    string    `json:"firstName"`
-	LastName     string    `json:"lastName"`
-	PasswordHash string    `json:"-"`
-	Avatar       string    `json:"avatar,omitempty"`
-	Bio          string    `json:"bio,omitempty"`
-	IsActive     bool      `json:"isActive"`
-	IsVerified   bool      `json:"isVerified"`
+	ID           string     `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	Email        string     `json:"email" gorm:"type:varchar(255);not null;uniqueIndex"`
+	Username     string     `json:"username" gorm:"type:varchar(100);not null;uniqueIndex"`
+	FirstName    string     `json:"firstName" gorm:"type:varchar(100)"`
+	LastName     string     `json:"lastName" gorm:"type:varchar(100)"`
+	PasswordHash string     `json:"-" gorm:"type:varchar(255);not null"`
+	Avatar       string     `json:"avatar,omitempty" gorm:"type:varchar(500)"`
+	Bio          string     `json:"bio,omitempty" gorm:"type:text"`
+	IsActive     bool       `json:"isActive" gorm:"default:true"`
+	IsVerified   bool       `json:"isVerified" gorm:"default:false"`
 	LastLoginAt  *time.Time `json:"lastLoginAt,omitempty"`
-	CreatedAt    time.Time  `json:"createdAt"`
-	UpdatedAt    time.Time  `json:"updatedAt"`
-	Gender       string     `json:"gender,omitempty"`
+	CreatedAt    time.Time  `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt    time.Time  `json:"updatedAt" gorm:"autoUpdateTime"`
+	Gender       string     `json:"gender,omitempty" gorm:"type:varchar(20)"`
 	Age          *int       `json:"age,omitempty"`
-	University   string     `json:"university,omitempty"`
-	Major        *string    `json:"major,omitempty"`
+	University   string     `json:"university,omitempty" gorm:"type:varchar(200)"`
+	Major        *string    `json:"major,omitempty" gorm:"type:varchar(100)"`
 }
 
 // FullName returns the user's full name

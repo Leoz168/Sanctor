@@ -11,25 +11,25 @@ func NewService(repo *Repository) *Service {
 }
 
 // CreatePost creates a new post
-func (s *Service) CreatePost(req CreatePostRequest) (*Model, error) {
+func (s *Service) CreatePost(req CreatePostRequest) (*Post, error) {
 	// TODO: Implement post creation logic
 	return nil, nil
 }
 
 // GetPost retrieves a post by ID
-func (s *Service) GetPost(id string) (*Model, error) {
+func (s *Service) GetPost(id string) (*Post, error) {
 	// TODO: Implement get post logic
 	return nil, nil
 }
 
 // GetAllPosts retrieves all posts
-func (s *Service) GetAllPosts() ([]*Model, error) {
+func (s *Service) GetAllPosts() ([]*Post, error) {
 	// TODO: Implement get all posts logic
 	return nil, nil
 }
 
 // UpdatePost updates an existing post
-func (s *Service) UpdatePost(id string, req UpdatePostRequest) (*Model, error) {
+func (s *Service) UpdatePost(id string, req UpdatePostRequest) (*Post, error) {
 	// TODO: Implement update post logic
 	return nil, nil
 }

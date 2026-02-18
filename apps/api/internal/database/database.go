@@ -8,12 +8,14 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/lib/pq" // PostgreSQL driver
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 // DB represents a database connection
 type DB struct {
 	*sql.DB
+	Gorm *gorm.DB // GORM instance for ORM operations
 }
 
 // Config holds database configuration
@@ -71,10 +73,32 @@ func ensureSSLMode(databaseURL string) string {
 
 // connect establishes a database connection with the given connection string
 func connect(connStr string) (*DB, error) {
-	// Open connection
-	sqlDB, err := sql.Open("postgres", connStr)
+	// Let GORM open the connection using its own pgx driver
+	var gormDB *gorm.DB
+	var err error
+
+	// Retry connection with backoff (DNS/network may take a moment in containers)
+	for attempt := 1; attempt <= 3; attempt++ {
+		gormDB, err = gorm.Open(postgres.Open(connStr), &gorm.Config{
+			SkipDefaultTransaction: true,
+		})
+		if err == nil {
+			break
+		}
+		log.Printf("Database connection attempt %d/3 failed: %v", attempt, err)
+		if attempt < 3 {
+			time.Sleep(time.Duration(attempt) * 2 * time.Second)
+		}
+	}
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %w", err)
+		return nil, fmt.Errorf("failed to connect to database after 3 attempts: %w", err)
+	}
+
+	// Get the underlying sql.DB for connection pool configuration
+	sqlDB, err := gormDB.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
 
 	// Configure connection pool
@@ -82,27 +106,15 @@ func connect(connStr string) (*DB, error) {
 	sqlDB.SetMaxIdleConns(5)
 	sqlDB.SetConnMaxLifetime(5 * time.Minute)
 
-	// Retry connection with backoff (DNS/network may take a moment in containers)
-	var pingErr error
-	for attempt := 1; attempt <= 3; attempt++ {
-		pingErr = sqlDB.Ping()
-		if pingErr == nil {
-			break
-		}
-		log.Printf("Database connection attempt %d/3 failed: %v", attempt, pingErr)
-		if attempt < 3 {
-			time.Sleep(time.Duration(attempt) * 2 * time.Second)
-		}
-	}
-
-	if pingErr != nil {
-		sqlDB.Close()
-		return nil, fmt.Errorf("failed to ping database after 3 attempts: %w", pingErr)
+	// Verify connectivity
+	if err := sqlDB.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
 	log.Println("✅ Database connection established")
+	log.Println("✅ GORM initialized")
 
-	return &DB{sqlDB}, nil
+	return &DB{DB: sqlDB, Gorm: gormDB}, nil
 }
 
 // Close closes the database connection
@@ -114,4 +126,14 @@ func (db *DB) Close() error {
 // Ping checks if the database is reachable
 func (db *DB) Ping() error {
 	return db.DB.Ping()
+}
+
+// AutoMigrate runs GORM auto-migration for the given models
+func (db *DB) AutoMigrate(models ...interface{}) error {
+	log.Println("Running database migrations...")
+	if err := db.Gorm.AutoMigrate(models...); err != nil {
+		return fmt.Errorf("failed to auto-migrate: %w", err)
+	}
+	log.Println("✅ Database migrations completed")
+	return nil
 }
