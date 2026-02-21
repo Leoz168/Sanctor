@@ -30,6 +30,10 @@ type Post struct {
 	Term          Term      `json:"terms" gorm:"type:varchar(20)"`
 	CreatedAt     time.Time `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt     time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
+	UpdatedBy     string    `json:"updated_by"`
+	Title         string    `json:"title" gorm:"type:varchar(100);not null"`
+	Content       string    `json:"content" gorm:"type:text;not null"`
+	CreatedBy     string    `json:"created_by" gorm:"type:varchar(100);not null"`
 }
 
 // CreatePostRequest represents post creation data
@@ -59,4 +63,6 @@ type UpdatePostRequest struct {
 	Gender        *string `json:"gender,omitempty"`
 	PropertyType  *string `json:"propertyType,omitempty"`
 	Term          *Term   `json:"terms,omitempty"`
+	Title         *string `json:"title,omitempty"`
+	Content       *string `json:"content,omitempty"`
 }

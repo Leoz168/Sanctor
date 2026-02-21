@@ -116,7 +116,11 @@ func (h *Handler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedPost, err := h.service.UpdatePost(id, req)
+	userID := r.Header.Get("X-User-ID")
+	userRole := r.Header.Get("X-User-Role")
+
+	// Update the UpdatePost call to include userID and userRole
+	updatedPost, err := h.service.UpdatePost(userID, req, userID, userRole)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
