@@ -11,6 +11,7 @@ import (
 	"sanctor/internal/picture"
 	"sanctor/internal/post"
 	"sanctor/internal/user"
+	"sanctor/internal/auth"
 )
 
 type Response struct {
@@ -37,11 +38,6 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
 	// Initialize database connection if DATABASE_URL is set
 	var db *database.DB
 	databaseURL := os.Getenv("DATABASE_URL")
@@ -114,6 +110,21 @@ func main() {
 	http.HandleFunc("/api/posts/create", postHandler.CreatePost)
 	http.HandleFunc("/api/posts/update", postHandler.UpdatePost)
 	http.HandleFunc("/api/posts/delete", postHandler.DeletePost)
+
+	// Initialize shared user service
+	userRepo := user.NewRepository()
+	userService := user.NewService(userRepo)
+
+	// Auth endpoints
+	authRepo := auth.NewRepository()
+	authService := auth.NewService(authRepo, userService)
+	authHandler := auth.NewHandler(authService)
+	http.HandleFunc("/api/auth/register", authHandler.Register)
+	http.HandleFunc("/api/auth/login", authHandler.Login)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
 	fmt.Printf("Server starting on port %s...\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

@@ -12,6 +12,9 @@ RUN go mod download
 # Copy source code
 COPY . .
 
+# Ensure go.sum is up-to-date
+RUN go mod tidy
+
 # Build the application from cmd/api
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/api
 
