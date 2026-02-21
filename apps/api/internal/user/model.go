@@ -1,19 +1,24 @@
 package user
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 // User represents a user in the system
 type User struct {
-	ID           string    `json:"id"`
-	Email        string    `json:"email"`
-	Username     string    `json:"username"`
-	FirstName    string    `json:"firstName"`
-	LastName     string    `json:"lastName"`
-	PasswordHash string    `json:"-"`
-	Avatar       string    `json:"avatar,omitempty"`
-	Bio          string    `json:"bio,omitempty"`
-	IsActive     bool      `json:"isActive"`
-	IsVerified   bool      `json:"isVerified"`
+	gorm.Model
+	Name         string     `json:"name"`
+	Email        string     `json:"email" gorm:"unique"`
+	Username     string     `json:"username"`
+	FirstName    string     `json:"firstName"`
+	LastName     string     `json:"lastName"`
+	PasswordHash string     `json:"-"`
+	Avatar       string     `json:"avatar,omitempty"`
+	Bio          string     `json:"bio,omitempty"`
+	IsActive     bool       `json:"isActive"`
+	IsVerified   bool       `json:"isVerified"`
 	LastLoginAt  *time.Time `json:"lastLoginAt,omitempty"`
 	CreatedAt    time.Time  `json:"createdAt"`
 	UpdatedAt    time.Time  `json:"updatedAt"`

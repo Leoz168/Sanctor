@@ -8,6 +8,9 @@ import (
 	"os"
 	"sanctor/internal/group"
 	"sanctor/internal/user"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type Response struct {
@@ -24,12 +27,12 @@ func enableCORS(w *http.ResponseWriter) {
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	response := Response{
 		Message: "Sanctor API is running",
 		Status:  "healthy",
 	}
-	
+
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -38,6 +41,23 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+
+	// Load environment variables (e.g., database credentials)
+	dsn := os.Getenv("DATABASE_URL") // Example: "host=localhost user=postgres password=secret dbname=mydb port=5432 sslmode=disable"
+	if dsn == "" {
+		log.Fatal("DATABASE_URL is not set")
+	}
+
+	// Initialize GORM with PostgreSQL
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Failed to connect to the database: %v", err)
+	}
+
+	// Example: AutoMigrate your models
+	// db.AutoMigrate(&YourModel{})
+
+	log.Println("Database connection established successfully!")
 
 	// Health check endpoints
 	http.HandleFunc("/health", healthHandler)

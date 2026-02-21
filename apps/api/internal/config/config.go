@@ -7,9 +7,10 @@ import (
 
 // Config holds application configuration
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	Auth     AuthConfig
+	Server      ServerConfig
+	Database    DatabaseConfig
+	Auth        AuthConfig
+	DatabaseURL string
 }
 
 // ServerConfig holds server-specific configuration
@@ -55,6 +56,7 @@ func Load() *Config {
 			TokenExpiry:   getEnvInt("TOKEN_EXPIRY", 24),
 			RefreshExpiry: getEnvInt("REFRESH_EXPIRY", 7),
 		},
+		DatabaseURL: getEnv("DATABASE_URL", ""),
 	}
 }
 

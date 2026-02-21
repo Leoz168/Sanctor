@@ -2,38 +2,40 @@ package database
 
 import (
 	"log"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-// DB represents a database connection
-type DB struct {
-	// TODO: Add actual database connection
-	// For now, this is a placeholder
-}
+var DB *gorm.DB
 
-// New creates a new database connection
-func New(host string, port int, user, password, dbname string) (*DB, error) {
-	// TODO: Implement actual database connection
-	// This could be PostgreSQL, MySQL, MongoDB, etc.
-	log.Println("Database connection initialized (placeholder)")
-	return &DB{}, nil
+// ConnectDatabase initializes the database connection using the provided DSN (Data Source Name).
+func ConnectDatabase(dsn string) {
+	var err error
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Failed to connect to the database: %v", err)
+	}
+
+	log.Println("Database connection established successfully!")
 }
 
 // Close closes the database connection
-func (db *DB) Close() error {
-	// TODO: Implement connection closing
-	log.Println("Database connection closed")
-	return nil
+func Close() error {
+	db, err := DB.DB()
+	if err != nil {
+		return err
+	}
+	return db.Close()
 }
 
 // Ping checks if the database is reachable
-func (db *DB) Ping() error {
-	// TODO: Implement ping
-	return nil
+func Ping() error {
+	return DB.Exec("SELECT 1").Error
 }
 
 // Migrate runs database migrations
-func (db *DB) Migrate() error {
-	// TODO: Implement migrations
+func Migrate() error {
 	log.Println("Running database migrations...")
 	return nil
 }

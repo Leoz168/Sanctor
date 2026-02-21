@@ -1,6 +1,7 @@
 package user
 
 import (
+	"Sanctor/apps/api/internal/database"
 	"errors"
 	"time"
 
@@ -150,4 +151,14 @@ func (s *Service) DeleteUser(id string) error {
 	}
 
 	return nil
+}
+
+func CreateUser(user *User) error {
+	return database.DB.Create(user).Error
+}
+
+func GetUserByID(id uint) (*User, error) {
+	var user User
+	err := database.DB.First(&user, id).Error
+	return &user, err
 }
