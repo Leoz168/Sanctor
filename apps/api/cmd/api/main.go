@@ -6,12 +6,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sanctor/internal/auth"
 	"sanctor/internal/database"
 	"sanctor/internal/group"
 	"sanctor/internal/picture"
 	"sanctor/internal/post"
 	"sanctor/internal/user"
-	"sanctor/internal/auth"
 )
 
 type Response struct {
@@ -28,12 +28,12 @@ func enableCORS(w *http.ResponseWriter) {
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	response := Response{
 		Message: "Sanctor API is running",
 		Status:  "healthy",
 	}
-	
+
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -96,19 +96,17 @@ func main() {
 	// Post endpoints - use database if available
 	var postService *post.Service
 	if db != nil {
-		postGormRepo := post.NewGormRepository(db)
-		postService = post.NewServiceWithGorm(postGormRepo)
+		postRepo := post.NewGormRepository(db)
+		postService = post.NewService(postRepo)
 		log.Println("✅ Posts initialized with database")
 	} else {
-		postRepo := post.NewRepository()
-		postService = post.NewService(postRepo)
-		log.Println("⚠️  Posts using in-memory storage")
+		log.Fatal("⚠️  In-memory storage is no longer supported for posts")
 	}
 	postHandler := post.NewHandler(postService)
 	http.HandleFunc("/api/posts", postHandler.GetPosts)
 	http.HandleFunc("/api/posts/get", postHandler.GetPost)
 	http.HandleFunc("/api/posts/create", postHandler.CreatePost)
-	http.HandleFunc("/api/posts/update", postHandler.UpdatePost)
+	http.HandleFunc("/posts/", postHandler.UpdatePost) // Updated route for UpdatePost
 	http.HandleFunc("/api/posts/delete", postHandler.DeletePost)
 
 	// Initialize shared user service
