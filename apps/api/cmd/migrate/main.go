@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-
 	"Sanctor/apps/api/internal/database"
 	"Sanctor/apps/api/internal/post"
 )

@@ -1,14 +1,22 @@
 package post
 
+import (
+	"fmt"
+
+	"gorm.io/gorm"
+)
+
 // Repository handles data persistence for posts
 type Repository struct {
 	posts map[string]*Post
+	db    *gorm.DB
 }
 
 // NewRepository creates a new post repository
-func NewRepository() *Repository {
+func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{
 		posts: make(map[string]*Post),
+		db:    db,
 	}
 }
 
@@ -18,12 +26,16 @@ func (r *Repository) Create(post *Post) (*Post, error) {
 	return post, nil
 }
 
-// FindByID retrieves a post by ID
+// FindByID retrieves a post by ID from the database
 func (r *Repository) FindByID(id string) (*Post, error) {
-	if post, ok := r.posts[id]; ok {
-		return post, nil
+	var post Post
+	if err := r.db.Where("id = ?", id).First(&post).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("post not found")
+		}
+		return nil, err
 	}
-	return nil, nil
+	return &post, nil
 }
 
 // FindAll retrieves all posts

@@ -33,20 +33,6 @@ services:
       - sanctor-network
     restart: unless-stopped
 
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: sanctor
-    ports:
-      - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
-
 networks:
   sanctor-network:
     driver: bridge
-
-volumes:
-  db_data:

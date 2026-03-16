@@ -6,60 +6,82 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/gin-gonic/gin"
 )
 
-// Service handles business logic for post operations
+// PostRepository defines the methods required for a post repository
+type PostRepository interface {
+	FindByID(id string) (*Post, error)
+	FindAll() ([]*Post, error)
+	Create(post *Post) (*Post, error)
+	Update(post *Post) error
+	Delete(id string) error
+}
+
+// Service handles business logic for posts
 type Service struct {
-	repo RepositoryInterface
+	repo PostRepository
 }
 
-// NewService creates a new post service with in-memory repository
-func NewService(repo *Repository) *Service {
-	return &Service{repo: repo}
-}
-
-// NewServiceWithGorm creates a new post service with GORM repository
-func NewServiceWithGorm(repo *GormRepository) *Service {
+// NewService creates a new post service
+func NewService(repo PostRepository) *Service {
 	return &Service{repo: repo}
 }
 
 // validatePostInput validates the required fields for a post
+// Updated validatePostInput to allow partial updates
 func validatePostInput(post *Post) error {
-	if post.Title == "" {
-		return errors.New("title is required")
+	if post.Title != "" && len(post.Title) < 3 {
+		return errors.New("title must be at least 3 characters")
 	}
-	if post.Content == "" {
-		return errors.New("content is required")
+	if post.Content != "" && len(post.Content) < 10 {
+		return errors.New("content must be at least 10 characters")
 	}
 	return nil
 }
 
 // CreatePost creates a new post
-func (s *Service) CreatePost(post *Post) (*Post, error) {
-	// Generate ID if not provided
-	if post.ID == "" {
-		post.ID = uuid.New().String()
+func (s *Service) CreatePost(req *CreatePostRequest) (*Post, error) {
+	post := &Post{
+		UserID: req.UserID,
+	}
+
+	if req.Address != nil {
+		post.Address = *req.Address
+	}
+	if req.IsSublet != nil {
+		post.IsSublet = *req.IsSublet
+	}
+	if req.Price != nil {
+		post.Price = *req.Price
+	}
+	if req.Rooms != nil {
+		post.Rooms = *req.Rooms
+	}
+	if req.RoomsOccupied != nil {
+		post.RoomsOccupied = *req.RoomsOccupied
+	}
+	if req.Bathrooms != nil {
+		post.Bathrooms = *req.Bathrooms
+	}
+	if req.Description != nil {
+		post.Description = *req.Description
+	}
+	if req.Gender != nil {
+		post.Gender = *req.Gender
+	}
+	if req.PropertyType != nil {
+		post.PropertyType = *req.PropertyType
+	}
+	if req.Term != nil {
+		post.Term = string(*req.Term)
 	}
 
 	// Set timestamps
-	now := time.Now()
-	post.CreatedAt = now
-	post.UpdatedAt = now
+	post.CreatedAt = time.Now()
+	post.UpdatedAt = time.Now()
 
-	// Validate required fields
-	if err := validatePostInput(post); err != nil {
-		return nil, err
-	}
-
-	// If repository exists, save to database
-	if s.repo != nil {
-		return s.repo.Create(post)
-	}
-
-	// Return the post with generated values (in-memory mode)
-	return post, nil
+	return s.repo.Create(post)
 }
 
 // GetPost retrieves a post by ID
@@ -127,7 +149,7 @@ func (s *Service) UpdatePost(id string, req UpdatePostRequest, userID string, us
 		post.PropertyType = *req.PropertyType
 	}
 	if req.Term != nil {
-		post.Term = *req.Term
+		post.Term = string(*req.Term)
 	}
 
 	// Update metadata fields

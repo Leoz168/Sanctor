@@ -28,8 +28,5 @@ WORKDIR /root/
 # Copy the binary from builder
 COPY --from=builder /app/main .
 
-# Expose port
-EXPOSE 8080
-
-# Run the binary
-CMD ["./main"]
+# Set the entrypoint to the compiled binary
+ENTRYPOINT ["/root/main"]

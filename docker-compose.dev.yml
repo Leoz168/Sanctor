@@ -32,7 +32,7 @@ services:
     networks:
       - sanctor-network
     restart: unless-stopped
-    command: sh -c \"npm install && npm run dev -- --host\"
+    command: ["sh", "-c", "npm install && npm run dev -- --host"]
 
 networks:
   sanctor-network:
