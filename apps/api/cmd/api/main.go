@@ -11,6 +11,7 @@ import (
 	"sanctor/internal/group"
 	"sanctor/internal/picture"
 	"sanctor/internal/post"
+	"sanctor/internal/institution"
 	"sanctor/internal/user"
 )
 
@@ -53,13 +54,14 @@ func main() {
 			defer db.Close()
 
 			// Run auto-migration for all models
-			if err := db.AutoMigrate(&user.User{}, &group.Group{}, &group.UserGroup{}, &post.Post{}, &picture.Picture{}); err != nil {
+			if err := db.AutoMigrate(&user.User{}, &group.Group{}, &group.UserGroup{}, &post.Post{}, &picture.Picture{}, &institution.Institution{}); err != nil {
 				log.Printf("⚠️  Failed to migrate database: %v", err)
 			}
 
 			log.Println("Initializing modules with database...")
 			user.InitWithDatabase(db)
 			group.InitWithDatabase(db)
+			institution.InitWithDatabase(db)
 			log.Println("✅ Database initialized successfully")
 		}
 	} else {
@@ -92,6 +94,13 @@ func main() {
 
 	// Group messaging endpoints
 	http.HandleFunc("/api/groups/messages/send", group.SendGroupMessage)
+
+	// Institution endpoints
+	http.HandleFunc("/api/institutions", institution.GetInstitutions)
+	http.HandleFunc("/api/institutions/get", institution.GetInstitution)
+	http.HandleFunc("/api/institutions/create", institution.CreateInstitution)
+	http.HandleFunc("/api/institutions/update", institution.UpdateInstitution)
+	http.HandleFunc("/api/institutions/delete", institution.DeleteInstitution)
 
 	// Post endpoints - use database if available
 	var postService *post.Service

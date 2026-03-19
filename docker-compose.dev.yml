@@ -3,6 +3,7 @@ services:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
+      target: builder
     container_name: sanctor-backend-dev
     ports:
       - "8080:8080"
@@ -23,7 +24,7 @@ services:
     container_name: sanctor-frontend-dev
     working_dir: /app
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - ./apps/web:/app
       - /app/node_modules

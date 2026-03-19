@@ -57,6 +57,7 @@ Build and run both services with Docker Compose:
 
 ```bash
 docker-compose up --build
+docker compose -f docker-compose.dev.yml up --build # Docker dev mode
 ```
 
 Access the application:
