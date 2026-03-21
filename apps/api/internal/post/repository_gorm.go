@@ -19,10 +19,49 @@ func NewGormRepository(db *database.DB) *GormRepository {
 }
 
 // Create adds a new post
-func (r *GormRepository) Create(post *Post) (*Post, error) {
-	if err := r.db.Create(post).Error; err != nil {
+func (r *GormRepository) CreateWithLinks(post *Post, groupIDs []string, institutionIDs []string) (*Post, error) {
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(post).Error; err != nil {
+			return err
+		}
+
+		if len(groupIDs) > 0 {
+			postGroups := make([]PostGroup, 0, len(groupIDs))
+			for _, groupID := range groupIDs {
+				postGroups = append(postGroups, PostGroup{
+					PostID:   post.ID,
+					GroupID:  groupID,
+					LinkedAt: post.CreatedAt,
+				})
+			}
+
+			if err := tx.Create(&postGroups).Error; err != nil {
+				return err
+			}
+		}
+
+		if len(institutionIDs) > 0 {
+			postInstitutions := make([]PostInstitution, 0, len(institutionIDs))
+			for _, institutionID := range institutionIDs {
+				postInstitutions = append(postInstitutions, PostInstitution{
+					PostID:        post.ID,
+					InstitutionID: institutionID,
+					LinkedAt:      post.CreatedAt,
+				})
+			}
+
+			if err := tx.Create(&postInstitutions).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
 		return nil, err
 	}
+
 	return post, nil
 }
 

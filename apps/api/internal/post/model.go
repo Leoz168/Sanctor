@@ -36,6 +36,20 @@ type Post struct {
 	CreatedBy     string    `json:"created_by"`     // uuid
 }
 
+// PostGroup represents the many-to-many relationship between posts and groups
+type PostGroup struct {
+	PostID   string    `json:"postId" gorm:"type:uuid;primaryKey"`
+	GroupID  string    `json:"groupId" gorm:"type:uuid;primaryKey"`
+	LinkedAt time.Time `json:"linkedAt" gorm:"autoCreateTime"`
+}
+
+// PostInstitution represents the many-to-many relationship between posts and institutions
+type PostInstitution struct {
+	PostID        string    `json:"postId" gorm:"type:uuid;primaryKey"`
+	InstitutionID string    `json:"institutionId" gorm:"type:uuid;primaryKey"`
+	LinkedAt      time.Time `json:"linkedAt" gorm:"autoCreateTime"`
+}
+
 // CreatePostRequest represents post creation data
 type CreatePostRequest struct {
 	UserID        string  `json:"userId"`
@@ -49,6 +63,8 @@ type CreatePostRequest struct {
 	Gender        *string `json:"gender"`
 	PropertyType  *string `json:"propertyType"`
 	Term          *Term   `json:"terms"`
+	GroupIDs      []string `json:"groupIds,omitempty"`
+	InstitutionIDs []string `json:"institutionIds,omitempty"`
 }
 
 // UpdatePostRequest represents post update data

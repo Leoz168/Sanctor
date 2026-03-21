@@ -2,7 +2,7 @@ package post
 
 // RepositoryInterface defines the contract for post data persistence
 type RepositoryInterface interface {
-	Create(post *Post) (*Post, error)
+	CreateWithLinks(post *Post, groupIDs []string, institutionIDs []string) (*Post, error)
 	FindByID(id string) (*Post, error)
 	FindAll() ([]*Post, error)
 	Update(post *Post) error

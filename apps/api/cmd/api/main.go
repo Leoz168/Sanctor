@@ -54,7 +54,7 @@ func main() {
 			defer db.Close()
 
 			// Run auto-migration for all models
-			if err := db.AutoMigrate(&user.User{}, &group.Group{}, &group.UserGroup{}, &group.GroupInstitution{}, &post.Post{}, &picture.Picture{}, &institution.Institution{}); err != nil {
+			if err := db.AutoMigrate(&user.User{}, &group.Group{}, &group.UserGroup{}, &group.GroupInstitution{}, &post.Post{}, &post.PostGroup{}, &post.PostInstitution{}, &picture.Picture{}, &institution.Institution{}); err != nil {
 				log.Printf("⚠️  Failed to migrate database: %v", err)
 			}
 

@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // PostRepository defines the methods required for a post repository
 type PostRepository interface {
 	FindByID(id string) (*Post, error)
 	FindAll() ([]*Post, error)
-	Create(post *Post) (*Post, error)
+	CreateWithLinks(post *Post, groupIDs []string, institutionIDs []string) (*Post, error)
 	Update(post *Post) error
 	Delete(id string) error
 }
@@ -43,6 +44,7 @@ func validatePostInput(post *Post) error {
 // CreatePost creates a new post
 func (s *Service) CreatePost(req *CreatePostRequest) (*Post, error) {
 	post := &Post{
+		ID:     uuid.New().String(),
 		UserID: req.UserID,
 	}
 
@@ -81,7 +83,31 @@ func (s *Service) CreatePost(req *CreatePostRequest) (*Post, error) {
 	post.CreatedAt = time.Now()
 	post.UpdatedAt = time.Now()
 
-	return s.repo.Create(post)
+	groupIDs := uniqueIDs(req.GroupIDs)
+	institutionIDs := uniqueIDs(req.InstitutionIDs)
+
+	return s.repo.CreateWithLinks(post, groupIDs, institutionIDs)
+}
+
+func uniqueIDs(ids []string) []string {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	seen := make(map[string]struct{}, len(ids))
+	unique := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if id == "" {
+			continue
+		}
+		if _, exists := seen[id]; exists {
+			continue
+		}
+		seen[id] = struct{}{}
+		unique = append(unique, id)
+	}
+
+	return unique
 }
 
 // GetPost retrieves a post by ID
