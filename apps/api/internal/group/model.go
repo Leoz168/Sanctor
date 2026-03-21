@@ -23,11 +23,19 @@ type UserGroup struct {
 	JoinedAt  time.Time `json:"joinedAt" gorm:"autoCreateTime"`
 }
 
+// GroupInstitution represents the many-to-many relationship between groups and institutions
+type GroupInstitution struct {
+	GroupID       string    `json:"groupId" gorm:"type:uuid;primaryKey"`
+	InstitutionID string    `json:"institutionId" gorm:"type:uuid;primaryKey"`
+	LinkedAt      time.Time `json:"linkedAt" gorm:"autoCreateTime"`
+}
+
 // CreateGroupRequest represents the data needed to create a new group
 type CreateGroupRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 	IsPrivate   bool   `json:"isPrivate"`
+	InstitutionID string `json:"institutionId"` // institution association
 	CreatedBy   string `json:"createdBy"` // User ID
 }
 
