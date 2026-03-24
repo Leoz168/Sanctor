@@ -5,6 +5,7 @@ type RepositoryInterface interface {
 	CreateWithLinks(post *Post, groupIDs []string, institutionIDs []string) (*Post, error)
 	FindByID(id string) (*Post, error)
 	FindAll() ([]*Post, error)
+	Search(filters PostSearchFilters) ([]*Post, error)
 	Update(post *Post) error
 	Delete(id string) error
 }

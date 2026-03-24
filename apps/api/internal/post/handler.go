@@ -3,6 +3,9 @@ package post
 import (
 	"encoding/json"
 	"net/http"
+	sharedtypes "sanctor/pkg/types"
+	"strconv"
+	"strings"
 )
 
 // Handler handles HTTP requests for posts
@@ -27,6 +30,110 @@ func (h *Handler) GetPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(posts)
+}
+
+// SearchPosts returns posts filtered by query parameters.
+func (h *Handler) SearchPosts(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodOptions {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	filters, err := parsePostSearchFilters(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	posts, err := h.service.SearchPosts(filters)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	json.NewEncoder(w).Encode(posts)
+}
+
+func parsePostSearchFilters(r *http.Request) (PostSearchFilters, error) {
+	q := r.URL.Query()
+	filters := PostSearchFilters{
+		Query:         strings.TrimSpace(q.Get("q")),
+		PropertyType:  strings.TrimSpace(q.Get("propertyType")),
+		GroupID:       strings.TrimSpace(q.Get("groupId")),
+		InstitutionID: strings.TrimSpace(q.Get("institutionId")),
+		SortBy:        strings.TrimSpace(q.Get("sortBy")),
+		SortOrder:     strings.TrimSpace(q.Get("sortOrder")),
+	}
+
+	if q.Get("minPrice") != "" {
+		value, err := strconv.ParseInt(q.Get("minPrice"), 10, 64)
+		if err != nil {
+			return PostSearchFilters{}, err
+		}
+		filters.MinPrice = &value
+	}
+	if q.Get("maxPrice") != "" {
+		value, err := strconv.ParseInt(q.Get("maxPrice"), 10, 64)
+		if err != nil {
+			return PostSearchFilters{}, err
+		}
+		filters.MaxPrice = &value
+	}
+	if q.Get("minRooms") != "" {
+		value, err := strconv.ParseInt(q.Get("minRooms"), 10, 64)
+		if err != nil {
+			return PostSearchFilters{}, err
+		}
+		filters.MinRooms = &value
+	}
+	if q.Get("minBathrooms") != "" {
+		value, err := strconv.ParseInt(q.Get("minBathrooms"), 10, 64)
+		if err != nil {
+			return PostSearchFilters{}, err
+		}
+		filters.MinBathrooms = &value
+	}
+	if q.Get("isSublet") != "" {
+		value, err := strconv.ParseBool(q.Get("isSublet"))
+		if err != nil {
+			return PostSearchFilters{}, err
+		}
+		filters.IsSublet = &value
+	}
+	if q.Get("gender") != "" {
+		value := sharedtypes.Gender(q.Get("gender"))
+		filters.Gender = &value
+	}
+	if q.Get("term") != "" {
+		value := sharedtypes.Term(q.Get("term"))
+		filters.Term = &value
+	}
+	if q.Get("limit") != "" {
+		value, err := strconv.Atoi(q.Get("limit"))
+		if err != nil {
+			return PostSearchFilters{}, err
+		}
+		filters.Limit = value
+	}
+	if q.Get("offset") != "" {
+		value, err := strconv.Atoi(q.Get("offset"))
+		if err != nil {
+			return PostSearchFilters{}, err
+		}
+		filters.Offset = value
+	}
+
+	return filters, nil
 }
 
 // CreatePost creates a new post

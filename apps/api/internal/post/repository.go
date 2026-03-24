@@ -2,6 +2,8 @@ package post
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -45,6 +47,96 @@ func (r *Repository) FindAll() ([]*Post, error) {
 		posts = append(posts, post)
 	}
 	return posts, nil
+}
+
+// Search retrieves posts in memory using basic filtering, sorting, and pagination.
+func (r *Repository) Search(filters PostSearchFilters) ([]*Post, error) {
+	posts := make([]*Post, 0, len(r.posts))
+	q := strings.ToLower(strings.TrimSpace(filters.Query))
+
+	for _, p := range r.posts {
+		if q != "" {
+			haystack := strings.ToLower(p.Title + " " + p.Content + " " + p.Description + " " + p.Address)
+			if !strings.Contains(haystack, q) {
+				continue
+			}
+		}
+
+		if filters.MinPrice != nil && p.Price < *filters.MinPrice {
+			continue
+		}
+		if filters.MaxPrice != nil && p.Price > *filters.MaxPrice {
+			continue
+		}
+		if filters.MinRooms != nil && p.Rooms < *filters.MinRooms {
+			continue
+		}
+		if filters.MinBathrooms != nil && p.Bathrooms < *filters.MinBathrooms {
+			continue
+		}
+		if filters.IsSublet != nil && p.IsSublet != *filters.IsSublet {
+			continue
+		}
+		if filters.Gender != nil && p.Gender != *filters.Gender {
+			continue
+		}
+		if filters.Term != nil && p.Term != *filters.Term {
+			continue
+		}
+		if filters.PropertyType != "" && !strings.EqualFold(p.PropertyType, filters.PropertyType) {
+			continue
+		}
+
+		posts = append(posts, p)
+	}
+
+	sortBy := strings.ToLower(strings.TrimSpace(filters.SortBy))
+	sortOrder := strings.ToLower(strings.TrimSpace(filters.SortOrder))
+	if sortOrder != "asc" {
+		sortOrder = "desc"
+	}
+
+	sort.Slice(posts, func(i, j int) bool {
+		left := posts[i]
+		right := posts[j]
+
+		less := false
+		switch sortBy {
+		case "price":
+			less = left.Price < right.Price
+		case "rooms":
+			less = left.Rooms < right.Rooms
+		case "bathrooms":
+			less = left.Bathrooms < right.Bathrooms
+		case "updated_at":
+			less = left.UpdatedAt.Before(right.UpdatedAt)
+		default:
+			less = left.CreatedAt.Before(right.CreatedAt)
+		}
+
+		if sortOrder == "asc" {
+			return less
+		}
+		return !less
+	})
+
+	start := filters.Offset
+	if start < 0 {
+		start = 0
+	}
+	if start > len(posts) {
+		start = len(posts)
+	}
+
+	end := len(posts)
+	if filters.Limit > 0 {
+		end = start + filters.Limit
+		if end > len(posts) {
+			end = len(posts)
+		}
+	}
+
+	return posts[start:end], nil
 }
 
 // Update updates a post

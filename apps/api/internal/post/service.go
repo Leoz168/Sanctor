@@ -14,6 +14,7 @@ import (
 type PostRepository interface {
 	FindByID(id string) (*Post, error)
 	FindAll() ([]*Post, error)
+	Search(filters PostSearchFilters) ([]*Post, error)
 	CreateWithLinks(post *Post, groupIDs []string, institutionIDs []string) (*Post, error)
 	Update(post *Post) error
 	Delete(id string) error
@@ -138,6 +139,29 @@ func (s *Service) GetAllPosts() ([]*Post, error) {
 		return s.repo.FindAll()
 	}
 	return []*Post{}, nil
+}
+
+// SearchPosts retrieves posts using backend filters, sorting, and pagination.
+func (s *Service) SearchPosts(filters PostSearchFilters) ([]*Post, error) {
+	if s.repo == nil {
+		return nil, fmt.Errorf("repository not initialized")
+	}
+
+	if filters.MinPrice != nil && filters.MaxPrice != nil && *filters.MinPrice > *filters.MaxPrice {
+		return nil, errors.New("minPrice cannot be greater than maxPrice")
+	}
+
+	if filters.Limit <= 0 {
+		filters.Limit = 20
+	}
+	if filters.Limit > 100 {
+		filters.Limit = 100
+	}
+	if filters.Offset < 0 {
+		filters.Offset = 0
+	}
+
+	return s.repo.Search(filters)
 }
 
 // UpdatePost updates an existing post

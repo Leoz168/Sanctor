@@ -71,3 +71,22 @@ type UpdatePostRequest struct {
 	PropertyType  *string `json:"property_type"`
 	Term          *sharedtypes.Term   `json:"term"`
 }
+
+// PostSearchFilters represents backend filter/sort/pagination options for post search.
+type PostSearchFilters struct {
+	Query         string
+	MinPrice      *int64
+	MaxPrice      *int64
+	MinRooms      *int64
+	MinBathrooms  *int64
+	IsSublet      *bool
+	Gender        *sharedtypes.Gender
+	PropertyType  string
+	Term          *sharedtypes.Term
+	GroupID       string
+	InstitutionID string
+	SortBy        string
+	SortOrder     string
+	Limit         int
+	Offset        int
+}

@@ -115,6 +115,7 @@ func main() {
 	}
 	postHandler := post.NewHandler(postService)
 	http.HandleFunc("/api/posts", postHandler.GetPosts)
+	http.HandleFunc("/api/posts/search", postHandler.SearchPosts)
 	http.HandleFunc("/api/posts/get", postHandler.GetPost)
 	http.HandleFunc("/api/posts/create", postHandler.CreatePost)
 	http.HandleFunc("/posts/", postHandler.UpdatePost) // Updated route for UpdatePost
