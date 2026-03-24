@@ -2,6 +2,7 @@ package post
 
 import (
 	"sanctor/internal/database"
+	sharedtypes "sanctor/pkg/types"
 
 	"gorm.io/gorm"
 )
@@ -105,7 +106,7 @@ func (r *GormRepository) Search(filters map[string]interface{}) ([]*Post, error)
 	query := r.db
 
 	// Apply filters
-	if term, ok := filters["term"].(Term); ok {
+	if term, ok := filters["term"].(sharedtypes.Term); ok {
 		query = query.Where("term = ?", term)
 	}
 	if gender, ok := filters["gender"].(string); ok && gender != "" {
@@ -114,7 +115,7 @@ func (r *GormRepository) Search(filters map[string]interface{}) ([]*Post, error)
 	if propertyType, ok := filters["propertyType"].(string); ok && propertyType != "" {
 		query = query.Where("property_type = ?", propertyType)
 	}
-	if maxPrice, ok := filters["maxPrice"].(string); ok && maxPrice != "" {
+	if maxPrice, ok := filters["maxPrice"].(int64); ok {
 		query = query.Where("price <= ?", maxPrice)
 	}
 

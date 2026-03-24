@@ -38,14 +38,28 @@ func validatePostInput(post *Post) error {
 	if post.Content != "" && len(post.Content) < 10 {
 		return errors.New("content must be at least 10 characters")
 	}
+	if post.Price < 0 {
+		return errors.New("price cannot be negative")
+	}
+	if post.Rooms < 0 {
+		return errors.New("rooms cannot be negative")
+	}
+	if post.Bathrooms < 0 {
+		return errors.New("bathrooms cannot be negative")
+	}
+	if post.RoomsOccupied < 0 || post.RoomsOccupied > post.Rooms {
+		return errors.New("rooms occupied cannot be negative or exceed total rooms")
+	}
 	return nil
 }
 
 // CreatePost creates a new post
 func (s *Service) CreatePost(req *CreatePostRequest) (*Post, error) {
 	post := &Post{
-		ID:     uuid.New().String(),
-		UserID: req.UserID,
+		ID:              uuid.New().String(),
+		UserID:          req.UserID,
+		CreatedByUserID: req.UserID,
+		UpdatedByUserID: req.UserID,
 	}
 
 	if req.Address != nil {
@@ -76,7 +90,7 @@ func (s *Service) CreatePost(req *CreatePostRequest) (*Post, error) {
 		post.PropertyType = *req.PropertyType
 	}
 	if req.Term != nil {
-		post.Term = string(*req.Term)
+		post.Term = *req.Term
 	}
 
 	// Set timestamps
@@ -142,7 +156,7 @@ func (s *Service) UpdatePost(id string, req UpdatePostRequest, userID string, us
 	}
 
 	// Check if the user is allowed to update the post
-	if userRole != "admin" && post.CreatedBy != userID {
+	if userRole != "admin" && post.CreatedByUserID != userID {
 		return nil, errors.New("you are not allowed to update this post")
 	}
 
@@ -175,11 +189,11 @@ func (s *Service) UpdatePost(id string, req UpdatePostRequest, userID string, us
 		post.PropertyType = *req.PropertyType
 	}
 	if req.Term != nil {
-		post.Term = string(*req.Term)
+		post.Term = *req.Term
 	}
 
 	// Update metadata fields
-	post.UpdatedBy = userID
+	post.UpdatedByUserID = userID
 	post.UpdatedAt = time.Now()
 
 	// Validate required fields
