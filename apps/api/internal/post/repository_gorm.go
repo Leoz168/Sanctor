@@ -2,7 +2,7 @@ package post
 
 import (
 	"sanctor/internal/database"
-	sharedtypes "sanctor/pkg/types"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -101,22 +101,79 @@ func (r *GormRepository) Delete(id string) error {
 }
 
 // Search posts by filters
-func (r *GormRepository) Search(filters map[string]interface{}) ([]*Post, error) {
+func (r *GormRepository) Search(filters PostSearchFilters) ([]*Post, error) {
 	var posts []*Post
-	query := r.db
+	query := r.db.Model(&Post{})
 
-	// Apply filters
-	if term, ok := filters["term"].(sharedtypes.Term); ok {
-		query = query.Where("term = ?", term)
+	if q := strings.TrimSpace(filters.Query); q != "" {
+		like := "%" + strings.ToLower(q) + "%"
+		query = query.Where(
+			"LOWER(title) LIKE ? OR LOWER(content) LIKE ? OR LOWER(description) LIKE ? OR LOWER(address) LIKE ?",
+			like,
+			like,
+			like,
+			like,
+		)
 	}
-	if gender, ok := filters["gender"].(string); ok && gender != "" {
-		query = query.Where("gender = ?", gender)
+
+	if filters.MinPrice != nil {
+		query = query.Where("price >= ?", *filters.MinPrice)
 	}
-	if propertyType, ok := filters["propertyType"].(string); ok && propertyType != "" {
-		query = query.Where("property_type = ?", propertyType)
+	if filters.MaxPrice != nil {
+		query = query.Where("price <= ?", *filters.MaxPrice)
 	}
-	if maxPrice, ok := filters["maxPrice"].(int64); ok {
-		query = query.Where("price <= ?", maxPrice)
+	if filters.MinRooms != nil {
+		query = query.Where("rooms >= ?", *filters.MinRooms)
+	}
+	if filters.MinBathrooms != nil {
+		query = query.Where("bathrooms >= ?", *filters.MinBathrooms)
+	}
+	if filters.IsSublet != nil {
+		query = query.Where("is_sublet = ?", *filters.IsSublet)
+	}
+	if filters.Gender != nil {
+		query = query.Where("gender = ?", *filters.Gender)
+	}
+	if filters.Term != nil {
+		query = query.Where("term = ?", *filters.Term)
+	}
+	if pt := strings.TrimSpace(filters.PropertyType); pt != "" {
+		query = query.Where("LOWER(property_type) = ?", strings.ToLower(pt))
+	}
+
+	if gid := strings.TrimSpace(filters.GroupID); gid != "" {
+		query = query.Joins("JOIN post_groups ON post_groups.post_id = posts.id").Where("post_groups.group_id = ?", gid)
+	}
+	if iid := strings.TrimSpace(filters.InstitutionID); iid != "" {
+		query = query.Joins("JOIN post_institutions ON post_institutions.post_id = posts.id").Where("post_institutions.institution_id = ?", iid)
+	}
+
+	query = query.Distinct("posts.*")
+
+	sortBy := strings.ToLower(strings.TrimSpace(filters.SortBy))
+	sortOrder := strings.ToLower(strings.TrimSpace(filters.SortOrder))
+	if sortOrder != "asc" {
+		sortOrder = "desc"
+	}
+
+	sortColumn := "created_at"
+	switch sortBy {
+	case "price":
+		sortColumn = "price"
+	case "rooms":
+		sortColumn = "rooms"
+	case "bathrooms":
+		sortColumn = "bathrooms"
+	case "updated_at":
+		sortColumn = "updated_at"
+	}
+	query = query.Order(sortColumn + " " + sortOrder)
+
+	if filters.Limit > 0 {
+		query = query.Limit(filters.Limit)
+	}
+	if filters.Offset > 0 {
+		query = query.Offset(filters.Offset)
 	}
 
 	err := query.Find(&posts).Error
