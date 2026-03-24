@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"sanctor/internal/auth"
+	"sanctor/internal/bookmark"
 	"sanctor/internal/comment"
 	"sanctor/internal/database"
 	"sanctor/internal/group"
@@ -55,7 +56,7 @@ func main() {
 			defer db.Close()
 
 			// Run auto-migration for all models
-			if err := db.AutoMigrate(&user.User{}, &group.Group{}, &group.UserGroup{}, &group.GroupInstitution{}, &post.Post{}, &post.PostGroup{}, &post.PostInstitution{}, &comment.Comment{}, &picture.Picture{}, &institution.Institution{}); err != nil {
+			if err := db.AutoMigrate(&user.User{}, &group.Group{}, &group.UserGroup{}, &group.GroupInstitution{}, &post.Post{}, &post.PostGroup{}, &post.PostInstitution{}, &bookmark.Bookmark{}, &comment.Comment{}, &picture.Picture{}, &institution.Institution{}); err != nil {
 				log.Printf("⚠️  Failed to migrate database: %v", err)
 			}
 
@@ -63,6 +64,7 @@ func main() {
 			user.InitWithDatabase(db)
 			group.InitWithDatabase(db)
 			institution.InitWithDatabase(db)
+			bookmark.InitWithDatabase(db)
 			comment.InitWithDatabase(db)
 			log.Println("✅ Database initialized successfully")
 		}
@@ -120,6 +122,10 @@ func main() {
 	http.HandleFunc("/api/posts/create", postHandler.CreatePost)
 	http.HandleFunc("/posts/", postHandler.UpdatePost) // Updated route for UpdatePost
 	http.HandleFunc("/api/posts/delete", postHandler.DeletePost)
+	http.HandleFunc("/api/posts/bookmarks", bookmark.GetBookmarks)
+	http.HandleFunc("/api/posts/bookmarks/check", bookmark.CheckBookmark)
+	http.HandleFunc("/api/posts/bookmarks/create", bookmark.CreateBookmark)
+	http.HandleFunc("/api/posts/bookmarks/delete", bookmark.DeleteBookmark)
 
 	// Comment endpoints
 	http.HandleFunc("/api/comments", comment.GetComments)
