@@ -1,6 +1,7 @@
 package user
 
 import (
+	sharedtypes "sanctor/pkg/types"
 	"time"
 )
 
@@ -19,9 +20,9 @@ type User struct {
 	LastLoginAt  *time.Time `json:"lastLoginAt,omitempty"`
 	CreatedAt    time.Time  `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt    time.Time  `json:"updatedAt" gorm:"autoUpdateTime"`
-	Gender       string     `json:"gender,omitempty" gorm:"type:varchar(20)"`
+	Gender       sharedtypes.Gender `json:"gender,omitempty" gorm:"type:varchar(20)"`
 	Age          *int       `json:"age,omitempty"`
-	University   string     `json:"university,omitempty" gorm:"type:varchar(200)"`
+	InstitutionID *string   `json:"institutionId,omitempty" gorm:"column:institution_id;type:uuid;index"`
 	Major        *string    `json:"major,omitempty" gorm:"type:varchar(100)"`
 }
 
@@ -44,7 +45,7 @@ func (u *User) ToPublicUser() *PublicUser {
 		Bio:        u.Bio,
 		Gender:     u.Gender,
 		Age:        u.Age,
-		University: u.University,
+		InstitutionID: u.InstitutionID,
 		Major:      u.Major,
 		CreatedAt:  u.CreatedAt,
 	}
@@ -58,9 +59,9 @@ type PublicUser struct {
 	LastName   string    `json:"lastName,omitempty"`
 	Avatar     string    `json:"avatar,omitempty"`
 	Bio        string    `json:"bio,omitempty"`
-	Gender     string    `json:"gender,omitempty"`
+	Gender     sharedtypes.Gender `json:"gender,omitempty"`
 	Age        *int      `json:"age,omitempty"`
-	University string    `json:"university,omitempty"`
+	InstitutionID *string `json:"institutionId,omitempty"`
 	Major      *string   `json:"major,omitempty"`
 	CreatedAt  time.Time `json:"createdAt"`
 }
@@ -72,9 +73,9 @@ type CreateUserRequest struct {
 	FirstName  string `json:"firstName"`
 	LastName   string `json:"lastName"`
 	Password   string  `json:"password"`
-	Gender     string  `json:"gender,omitempty"`
+	Gender     sharedtypes.Gender `json:"gender,omitempty"`
 	Age        *int    `json:"age,omitempty"`
-	University string  `json:"university,omitempty"`
+	InstitutionID *string `json:"institutionId,omitempty"`
 	Major      *string `json:"major,omitempty"`
 }
 
@@ -85,9 +86,9 @@ type UpdateUserRequest struct {
 	LastName   string `json:"lastName,omitempty"`
 	Avatar     string `json:"avatar,omitempty"`
 	Bio        string  `json:"bio,omitempty"`
-	Gender     string  `json:"gender,omitempty"`
+	Gender     sharedtypes.Gender `json:"gender,omitempty"`
 	Age        *int    `json:"age,omitempty"`
-	University string  `json:"university,omitempty"`
+	InstitutionID *string `json:"institutionId,omitempty"`
 	Major      *string `json:"major,omitempty"`
 }
 

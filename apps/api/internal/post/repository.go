@@ -20,8 +20,8 @@ func NewRepository(db *gorm.DB) *Repository {
 	}
 }
 
-// Create adds a new post
-func (r *Repository) Create(post *Post) (*Post, error) {
+// CreateWithLinks adds a new post and ignores relation links in memory mode
+func (r *Repository) CreateWithLinks(post *Post, groupIDs []string, institutionIDs []string) (*Post, error) {
 	r.posts[post.ID] = post
 	return post, nil
 }

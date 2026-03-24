@@ -27,7 +27,7 @@ func (r *PostgresRepository) Create(user *User) error {
 		INSERT INTO users (
 			id, email, username, first_name, last_name, password_hash,
 			avatar, bio, is_active, is_verified,last_login_at,
-			created_at, updated_at, gender, age, university, major
+			created_at, updated_at, gender, age, institution_id, major
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 	`
 
@@ -35,7 +35,7 @@ func (r *PostgresRepository) Create(user *User) error {
 		user.ID, user.Email, user.Username, user.FirstName, user.LastName,
 		user.PasswordHash, user.Avatar, user.Bio, user.IsActive, user.IsVerified,
 		user.LastLoginAt, user.CreatedAt, user.UpdatedAt,
-		user.Gender, user.Age, user.University, user.Major,
+		user.Gender, user.Age, user.InstitutionID, user.Major,
 	)
 
 	return err
@@ -47,7 +47,7 @@ func (r *PostgresRepository) FindByID(id string) (*User, error) {
 	query := `
 		SELECT id, email, username, first_name, last_name, password_hash,
 		       avatar, bio, is_active, is_verified, last_login_at,
-		       created_at, updated_at, gender, age, university, major
+		       created_at, updated_at, gender, age, institution_id, major
 		FROM users WHERE id = $1
 	`
 
@@ -55,7 +55,7 @@ func (r *PostgresRepository) FindByID(id string) (*User, error) {
 		&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
 		&user.PasswordHash, &user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
 		&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
-		&user.Gender, &user.Age, &user.University, &user.Major,
+		&user.Gender, &user.Age, &user.InstitutionID, &user.Major,
 	)
 
 	if err == sql.ErrNoRows {
@@ -73,7 +73,7 @@ func (r *PostgresRepository) FindAll() []*User {
 	query := `
 		SELECT id, email, username, first_name, last_name, password_hash,
 		       avatar, bio, is_active, is_verified, last_login_at,
-		       created_at, updated_at, gender, age, university, major
+		       created_at, updated_at, gender, age, institution_id, major
 		FROM users
 		ORDER BY created_at DESC
 	`
@@ -91,7 +91,7 @@ func (r *PostgresRepository) FindAll() []*User {
 			&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
 			&user.PasswordHash, &user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
 			&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
-			&user.Gender, &user.Age, &user.University, &user.Major,
+			&user.Gender, &user.Age, &user.InstitutionID, &user.Major,
 		)
 		if err == nil {
 			users = append(users, user)
@@ -112,7 +112,7 @@ func (r *PostgresRepository) Update(user *User) error {
 			email = $2, username = $3, first_name = $4, last_name = $5,
 			password_hash = $6, avatar = $7, bio = $8, is_active = $9,
 			is_verified = $10, last_login_at = $11, updated_at = $12,
-			gender = $13, age = $14, university = $15, major = $16
+			gender = $13, age = $14, institution_id = $15, major = $16
 		WHERE id = $1
 	`
 
@@ -120,7 +120,7 @@ func (r *PostgresRepository) Update(user *User) error {
 		user.ID, user.Email, user.Username, user.FirstName, user.LastName,
 		user.PasswordHash, user.Avatar, user.Bio, user.IsActive, user.IsVerified,
 		user.LastLoginAt, user.UpdatedAt,
-		user.Gender, user.Age, user.University, user.Major,
+		user.Gender, user.Age, user.InstitutionID, user.Major,
 	)
 	if err != nil {
 		return err
@@ -179,7 +179,7 @@ func (r *PostgresRepository) FindByEmail(email string) (*User, error) {
 	query := `
 		SELECT id, email, username, first_name, last_name, password_hash,
 		       avatar, bio, is_active, is_verified, last_login_at,
-		       created_at, updated_at, gender, age, university, major
+		       created_at, updated_at, gender, age, institution_id, major
 		FROM users WHERE email = $1
 	`
 
@@ -187,7 +187,7 @@ func (r *PostgresRepository) FindByEmail(email string) (*User, error) {
 		&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
 		&user.PasswordHash, &user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
 		&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
-		&user.Gender, &user.Age, &user.University, &user.Major,
+		&user.Gender, &user.Age, &user.InstitutionID, &user.Major,
 	)
 
 	if err == sql.ErrNoRows {
@@ -206,7 +206,7 @@ func (r *PostgresRepository) FindByUsername(username string) (*User, error) {
 	query := `
 		SELECT id, email, username, first_name, last_name, password_hash,
 		       avatar, bio, is_active, is_verified, last_login_at,
-		       created_at, updated_at, gender, age, university, major
+		       created_at, updated_at, gender, age, institution_id, major
 		FROM users WHERE username = $1
 	`
 
@@ -214,7 +214,7 @@ func (r *PostgresRepository) FindByUsername(username string) (*User, error) {
 		&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
 		&user.PasswordHash, &user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
 		&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
-		&user.Gender, &user.Age, &user.University, &user.Major,
+		&user.Gender, &user.Age, &user.InstitutionID, &user.Major,
 	)
 
 	if err == sql.ErrNoRows {

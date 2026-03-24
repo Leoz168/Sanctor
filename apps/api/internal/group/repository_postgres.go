@@ -108,6 +108,15 @@ func (r *PostgresRepository) AddUserToGroup(userGroup *UserGroup) error {
 	return err
 }
 
+// AddGroupToInstitution links a group to an institution
+func (r *PostgresRepository) AddGroupToInstitution(groupInstitution *GroupInstitution) error {
+	query := `INSERT INTO group_institutions (group_id, institution_id, linked_at)
+	          VALUES ($1, $2, $3)`
+
+	_, err := r.db.Exec(query, groupInstitution.GroupID, groupInstitution.InstitutionID, groupInstitution.LinkedAt)
+	return err
+}
+
 // RemoveUserFromGroup removes a user from a group
 func (r *PostgresRepository) RemoveUserFromGroup(userID, groupID string) error {
 	query := `DELETE FROM user_groups WHERE user_id = $1 AND group_id = $2`

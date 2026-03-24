@@ -46,28 +46,13 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var post Post
-	if err := json.NewDecoder(r.Body).Decode(&post); err != nil {
+	var req CreatePostRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Map Post to CreatePostRequest
-	req := &CreatePostRequest{
-		UserID:        post.UserID,
-		Address:       &post.Address,
-		IsSublet:      &post.IsSublet,
-		Price:         &post.Price,
-		Rooms:         &post.Rooms,
-		RoomsOccupied: &post.RoomsOccupied,
-		Bathrooms:     &post.Bathrooms,
-		Description:   &post.Description,
-		Gender:        &post.Gender,
-		PropertyType:  &post.PropertyType,
-		Term:          (*Term)(&post.Term),
-	}
-
-	createdPost, err := h.service.CreatePost(req)
+	createdPost, err := h.service.CreatePost(&req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

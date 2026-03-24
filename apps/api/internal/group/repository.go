@@ -10,6 +10,7 @@ type InMemoryRepository struct {
 	groups      map[string]*Group      // groupID -> Group
 	userGroups  map[string][]*UserGroup // userID -> []UserGroup
 	groupUsers  map[string][]*UserGroup // groupID -> []UserGroup
+	groupInstitutions map[string][]*GroupInstitution // groupID -> []GroupInstitution
 	mu          sync.RWMutex
 }
 
@@ -19,6 +20,7 @@ func NewRepository() Repository {
 		groups:     make(map[string]*Group),
 		userGroups: make(map[string][]*UserGroup),
 		groupUsers: make(map[string][]*UserGroup),
+		groupInstitutions: make(map[string][]*GroupInstitution),
 	}
 }
 
@@ -81,6 +83,7 @@ func (r *InMemoryRepository) Delete(id string) error {
 
 	// Remove all memberships for this group
 	delete(r.groupUsers, id)
+	delete(r.groupInstitutions, id)
 
 	// Remove from user's group lists
 	for userID, userGroupsList := range r.userGroups {
@@ -117,6 +120,25 @@ func (r *InMemoryRepository) AddUserToGroup(userGroup *UserGroup) error {
 	// Add to userGroups
 	r.userGroups[userGroup.UserID] = append(r.userGroups[userGroup.UserID], userGroup)
 
+	return nil
+}
+
+// AddGroupToInstitution links a group to an institution
+func (r *InMemoryRepository) AddGroupToInstitution(groupInstitution *GroupInstitution) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.groups[groupInstitution.GroupID]; !exists {
+		return errors.New("group not found")
+	}
+
+	for _, gi := range r.groupInstitutions[groupInstitution.GroupID] {
+		if gi.InstitutionID == groupInstitution.InstitutionID {
+			return errors.New("group already linked to institution")
+		}
+	}
+
+	r.groupInstitutions[groupInstitution.GroupID] = append(r.groupInstitutions[groupInstitution.GroupID], groupInstitution)
 	return nil
 }
 
