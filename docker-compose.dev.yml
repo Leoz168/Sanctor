@@ -12,10 +12,22 @@ services:
     environment:
       - GO_ENV=development
       - PORT=8080
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
     networks:
       - sanctor-network
     restart: unless-stopped
     command: sh -c "go mod tidy && go run cmd/api/main.go"
+
+  redis:
+    image: redis:7-alpine
+    container_name: sanctor-redis-dev
+    ports:
+      - "6379:6379"
+    networks:
+      - sanctor-network
+    restart: unless-stopped
 
   frontend:
     image: node:18-alpine

@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
+	Redis    RedisConfig
 	Auth     AuthConfig
 }
 
@@ -26,6 +27,15 @@ type DatabaseConfig struct {
 	User     string
 	Password string
 	DBName   string
+}
+
+// RedisConfig holds Redis configuration
+type RedisConfig struct {
+	URL      string
+	Host     string
+	Port     int
+	Password string
+	DB       int
 }
 
 // AuthConfig holds authentication configuration
@@ -49,6 +59,13 @@ func Load() *Config {
 			User:     getEnv("DB_USER", "postgres"),
 			Password: getEnv("DB_PASSWORD", ""),
 			DBName:   getEnv("DB_NAME", "sanctor"),
+		},
+		Redis: RedisConfig{
+			URL:      getEnv("REDIS_URL", "redis://localhost:6379/0"),
+			Host:     getEnv("REDIS_HOST", "localhost"),
+			Port:     getEnvInt("REDIS_PORT", 6379),
+			Password: getEnv("REDIS_PASSWORD", ""),
+			DB:       getEnvInt("REDIS_DB", 0),
 		},
 		Auth: AuthConfig{
 			JWTSecret:     getEnv("JWT_SECRET", "your-secret-key"),
