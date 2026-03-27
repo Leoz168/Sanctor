@@ -17,10 +17,10 @@ type Group struct {
 
 // UserGroup represents the many-to-many relationship between users and groups
 type UserGroup struct {
-	UserID    string    `json:"userId" gorm:"type:uuid;primaryKey"`
-	GroupID   string    `json:"groupId" gorm:"type:uuid;primaryKey"`
-	Role      string    `json:"role" gorm:"type:varchar(20);default:'member'"` // "member", "admin", "owner"
-	JoinedAt  time.Time `json:"joinedAt" gorm:"autoCreateTime"`
+	UserID   string    `json:"userId" gorm:"type:uuid;primaryKey"`
+	GroupID  string    `json:"groupId" gorm:"type:uuid;primaryKey"`
+	Role     string    `json:"role" gorm:"type:varchar(20);default:'member'"` // "member", "admin", "owner"
+	JoinedAt time.Time `json:"joinedAt" gorm:"autoCreateTime"`
 }
 
 // GroupInstitution represents the many-to-many relationship between groups and institutions
@@ -32,11 +32,11 @@ type GroupInstitution struct {
 
 // CreateGroupRequest represents the data needed to create a new group
 type CreateGroupRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	IsPrivate   bool   `json:"isPrivate"`
+	Name          string `json:"name"`
+	Description   string `json:"description,omitempty"`
+	IsPrivate     bool   `json:"isPrivate"`
 	InstitutionID string `json:"institutionId"` // institution association
-	CreatedBy   string `json:"createdBy"` // User ID
+	CreatedBy     string `json:"createdBy"`     // User ID
 }
 
 // UpdateGroupRequest represents the data that can be updated
