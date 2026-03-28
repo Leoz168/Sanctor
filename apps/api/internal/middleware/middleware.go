@@ -10,6 +10,7 @@ import (
 	"net/http"
 	redisclient "sanctor/internal/redis"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -95,18 +96,31 @@ func RateLimit(next http.Handler) http.Handler {
 
 // RateLimitWithRedis enforces per-identity, per-route limits backed by Redis.
 func RateLimitWithRedis(client *redisclient.Client, cfg RateLimitConfig) func(http.Handler) http.Handler {
-	if cfg.Prefix == "" {
-		cfg.Prefix = "rl"
-	}
-	if cfg.Window <= 0 {
-		cfg.Window = time.Minute
-	}
-	if cfg.MaxRequests <= 0 {
-		cfg.MaxRequests = 120
+	cfg = sanitizeRateLimitConfig(cfg)
+
+	return RateLimitWithRedisByRoute(client, map[string]RateLimitConfig{}, cfg)
+}
+
+// RateLimitWithRedisByRoute applies route-prefix overrides on top of a default fixed-window policy.
+func RateLimitWithRedisByRoute(client *redisclient.Client, routePolicies map[string]RateLimitConfig, defaultCfg RateLimitConfig) func(http.Handler) http.Handler {
+	defaultCfg = sanitizeRateLimitConfig(defaultCfg)
+
+	sanitizedPolicies := make(map[string]RateLimitConfig, len(routePolicies))
+	for prefix, cfg := range routePolicies {
+		normalizedPrefix := strings.TrimSpace(prefix)
+		if normalizedPrefix == "" {
+			continue
+		}
+		if !strings.HasPrefix(normalizedPrefix, "/") {
+			normalizedPrefix = "/" + normalizedPrefix
+		}
+		sanitizedPolicies[normalizedPrefix] = sanitizeRateLimitConfig(cfg)
 	}
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			cfg := resolveRateLimitConfig(r.URL.Path, sanitizedPolicies, defaultCfg)
+
 			if r.Method == http.MethodOptions {
 				next.ServeHTTP(w, r)
 				return
@@ -163,6 +177,33 @@ func RateLimitWithRedis(client *redisclient.Client, cfg RateLimitConfig) func(ht
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func sanitizeRateLimitConfig(cfg RateLimitConfig) RateLimitConfig {
+	if cfg.Prefix == "" {
+		cfg.Prefix = "rl"
+	}
+	if cfg.Window <= 0 {
+		cfg.Window = time.Minute
+	}
+	if cfg.MaxRequests <= 0 {
+		cfg.MaxRequests = 120
+	}
+	return cfg
+}
+
+func resolveRateLimitConfig(path string, routePolicies map[string]RateLimitConfig, defaultCfg RateLimitConfig) RateLimitConfig {
+	selected := defaultCfg
+	bestPrefixLen := -1
+
+	for prefix, cfg := range routePolicies {
+		if strings.HasPrefix(path, prefix) && len(prefix) > bestPrefixLen {
+			selected = cfg
+			bestPrefixLen = len(prefix)
+		}
+	}
+
+	return selected
 }
 
 func requestIdentity(r *http.Request) string {

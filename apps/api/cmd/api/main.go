@@ -194,10 +194,25 @@ func main() {
 		port = "8080"
 	}
 
-	rateLimitConfig := middleware.DefaultRateLimitConfig()
-	// Keep auth endpoints tighter than general API traffic.
-	rateLimitConfig.MaxRequests = 60
-	rateLimited := middleware.RateLimitWithRedis(redisClient, rateLimitConfig)(http.DefaultServeMux)
+	defaultRateLimit := middleware.DefaultRateLimitConfig()
+	defaultRateLimit.MaxRequests = 120
+
+	routeRateLimits := map[string]middleware.RateLimitConfig{
+		"/api/auth": {
+			Prefix:      "rl:auth",
+			Window:      time.Minute,
+			MaxRequests: 20,
+			FailOpen:    true,
+		},
+		"/api/posts/search": {
+			Prefix:      "rl:search",
+			Window:      time.Minute,
+			MaxRequests: 60,
+			FailOpen:    true,
+		},
+	}
+
+	rateLimited := middleware.RateLimitWithRedisByRoute(redisClient, routeRateLimits, defaultRateLimit)(http.DefaultServeMux)
 	handler := middleware.Logger(middleware.CORS(rateLimited))
 
 	fmt.Printf("Server starting on port %s...\n", port)
