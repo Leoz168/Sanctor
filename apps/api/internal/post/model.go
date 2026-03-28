@@ -1,62 +1,92 @@
 package post
 
 import (
+	sharedtypes "sanctor/pkg/types"
 	"time"
-)
-
-// Term represents the lease term season
-type Term string
-
-const (
-	TermWinter Term = "Winter"
-	TermSpring Term = "Spring"
-	TermSummer Term = "Summer"
-	TermFall   Term = "Fall"
 )
 
 // Model represents a post in the system
 type Post struct {
-	ID            string    `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	UserID        string    `json:"userId" gorm:"type:uuid;not null;index"`
-	Address       string    `json:"address" gorm:"type:varchar(500);not null"`
-	IsSublet      bool      `json:"isSublet" gorm:"default:false"`
-	Price         string    `json:"price" gorm:"type:varchar(50)"`
-	Rooms         string    `json:"bedrooms" gorm:"type:varchar(20)"`
-	RoomsOccupied int       `json:"roomsOccupied" gorm:"default:0"`
-	Bathrooms     string    `json:"bathrooms" gorm:"type:varchar(20)"`
-	Description   string    `json:"description" gorm:"type:text"`
-	Gender        string    `json:"gender" gorm:"type:varchar(20)"`
-	PropertyType  string    `json:"propertyType" gorm:"type:varchar(50)"`
-	Term          Term      `json:"terms" gorm:"type:varchar(20)"`
-	CreatedAt     time.Time `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt     time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
+	ID              string             `json:"id"`                                          // uuid
+	UserID          string             `json:"user_id"`                                     // uuid
+	Address         string             `json:"address" gorm:"index:idx_posts_address"`      // varchar
+	IsSublet        bool               `json:"is_sublet"`                                   // bool
+	Price           int64              `json:"price" gorm:"index:idx_posts_price"`          // int8
+	Rooms           int64              `json:"rooms"`                                       // int8
+	RoomsOccupied   int64              `json:"rooms_occupied"`                              // int8
+	Bathrooms       int64              `json:"bathrooms"`                                   // int8
+	Description     string             `json:"description"`                                 // text
+	Gender          sharedtypes.Gender `json:"gender" gorm:"index:idx_posts_gender"`        // varchar
+	PropertyType    string             `json:"property_type"`                               // varchar
+	Term            sharedtypes.Term   `json:"term"`                                        // varchar
+	Title           string             `json:"title"`                                       // varchar
+	Content         string             `json:"content"`                                     // text
+	CreatedAt       time.Time          `json:"created_at"`                                  // timestamptz
+	UpdatedAt       time.Time          `json:"updated_at"`                                  // timestamptz
+	UpdatedByUserID string             `json:"updated_by_user_id" gorm:"column:updated_by"` // uuid
+	CreatedByUserID string             `json:"created_by_user_id" gorm:"column:created_by"` // uuid
+}
+
+// PostGroup represents the many-to-many relationship between posts and groups
+type PostGroup struct {
+	PostID   string    `json:"postId" gorm:"type:uuid;primaryKey"`
+	GroupID  string    `json:"groupId" gorm:"type:uuid;primaryKey"`
+	LinkedAt time.Time `json:"linkedAt" gorm:"autoCreateTime"`
+}
+
+// PostInstitution represents the many-to-many relationship between posts and institutions
+type PostInstitution struct {
+	PostID        string    `json:"postId" gorm:"type:uuid;primaryKey"`
+	InstitutionID string    `json:"institutionId" gorm:"type:uuid;primaryKey"`
+	LinkedAt      time.Time `json:"linkedAt" gorm:"autoCreateTime"`
 }
 
 // CreatePostRequest represents post creation data
 type CreatePostRequest struct {
-	UserID        string `json:"userId"`
-	Address       string `json:"address"`
-	IsSublet      bool   `json:"isSublet"`
-	Price         string `json:"price"`
-	Rooms         string `json:"bedrooms"`
-	RoomsOccupied int    `json:"roomsOccupied"`
-	Bathrooms     string `json:"bathrooms"`
-	Description   string `json:"description"`
-	Gender        string `json:"gender"`
-	PropertyType  string `json:"propertyType"`
-	Term          Term   `json:"terms"`
+	UserID         string              `json:"userId"`
+	Address        *string             `json:"address"`
+	IsSublet       *bool               `json:"isSublet"`
+	Price          *int64              `json:"price"`
+	Rooms          *int64              `json:"bedrooms"`
+	RoomsOccupied  *int64              `json:"roomsOccupied"`
+	Bathrooms      *int64              `json:"bathrooms"`
+	Description    *string             `json:"description"`
+	Gender         *sharedtypes.Gender `json:"gender"`
+	PropertyType   *string             `json:"propertyType"`
+	Term           *sharedtypes.Term   `json:"terms"`
+	GroupIDs       []string            `json:"groupIds,omitempty"`
+	InstitutionIDs []string            `json:"institutionIds,omitempty"`
 }
 
 // UpdatePostRequest represents post update data
 type UpdatePostRequest struct {
-	Address       *string `json:"address,omitempty"`
-	IsSublet      *bool   `json:"isSublet,omitempty"`
-	Price         *string `json:"price,omitempty"`
-	Rooms         *string `json:"bedrooms,omitempty"`
-	RoomsOccupied *int    `json:"roomsOccupied,omitempty"`
-	Bathrooms     *string `json:"bathrooms,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	Gender        *string `json:"gender,omitempty"`
-	PropertyType  *string `json:"propertyType,omitempty"`
-	Term          *Term   `json:"terms,omitempty"`
+	Address       *string             `json:"address"`
+	IsSublet      *bool               `json:"is_sublet"`
+	Price         *int64              `json:"price"`
+	Rooms         *int64              `json:"rooms"`
+	RoomsOccupied *int64              `json:"rooms_occupied"`
+	Bathrooms     *int64              `json:"bathrooms"`
+	Description   *string             `json:"description"`
+	Gender        *sharedtypes.Gender `json:"gender"`
+	PropertyType  *string             `json:"property_type"`
+	Term          *sharedtypes.Term   `json:"term"`
+}
+
+// PostSearchFilters represents backend filter/sort/pagination options for post search.
+type PostSearchFilters struct {
+	Query         string
+	MinPrice      *int64
+	MaxPrice      *int64
+	MinRooms      *int64
+	MinBathrooms  *int64
+	IsSublet      *bool
+	Gender        *sharedtypes.Gender
+	PropertyType  string
+	Term          *sharedtypes.Term
+	GroupID       string
+	InstitutionID string
+	SortBy        string
+	SortOrder     string
+	Limit         int
+	Offset        int
 }

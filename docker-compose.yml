@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   backend:
     build:
@@ -14,6 +16,7 @@ services:
     networks:
       - sanctor-network
     restart: unless-stopped
+    command: ["go", "run", "cmd/migrate/main.go"]
 
   frontend:
     build:

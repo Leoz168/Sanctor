@@ -1,6 +1,6 @@
 services:
   backend:
-    image: golang:1.21-alpine
+    image: golang:1.23-alpine
     container_name: sanctor-backend-dev
     working_dir: /app
     ports:
@@ -22,7 +22,7 @@ services:
     container_name: sanctor-frontend-dev
     working_dir: /app
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - ./apps/web:/app
       - /app/node_modules
@@ -31,7 +31,7 @@ services:
     networks:
       - sanctor-network
     restart: unless-stopped
-    command: sh -c \"npm install && npm run dev -- --host\"
+    command: ["sh", "-c", "npm install && npm run dev -- --host"]
 
 networks:
   sanctor-network:

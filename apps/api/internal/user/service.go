@@ -61,7 +61,7 @@ func (s *Service) CreateUser(req CreateUserRequest) (*User, error) {
 		PasswordHash: hashedPassword,
 		Gender:       req.Gender,
 		Age:          req.Age,
-		University:   req.University,
+		InstitutionID: req.InstitutionID,
 		Major:        req.Major,
 		IsActive:     true,
 		IsVerified:   false,
@@ -124,8 +124,8 @@ func (s *Service) UpdateUser(id string, req UpdateUserRequest) (*User, error) {
 	if req.Age != nil {
 		user.Age = req.Age
 	}
-	if req.University != "" {
-		user.University = req.University
+	if req.InstitutionID != nil {
+		user.InstitutionID = req.InstitutionID
 	}
 	if req.Major != nil {
 		user.Major = req.Major

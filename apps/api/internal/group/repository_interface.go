@@ -8,6 +8,7 @@ type Repository interface {
 	Update(group *Group) error
 	Delete(id string) error
 	AddUserToGroup(userGroup *UserGroup) error
+	AddGroupToInstitution(groupInstitution *GroupInstitution) error
 	RemoveUserFromGroup(userID, groupID string) error
 	GetGroupMembers(groupID string) ([]*UserGroup, error)
 	GetUserGroups(userID string) []*UserGroup

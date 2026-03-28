@@ -28,6 +28,10 @@ func (s *Service) CreateGroup(req CreateGroupRequest) (*Group, error) {
 		return nil, errors.New("creator user ID is required")
 	}
 
+	if req.InstitutionID == "" {
+		return nil, errors.New("institution ID is required")
+	}
+
 	// Create group
 	group := &Group{
 		ID:          uuid.New().String(),
@@ -55,6 +59,18 @@ func (s *Service) CreateGroup(req CreateGroupRequest) (*Group, error) {
 		// Rollback: delete the group if adding creator fails
 		s.repo.Delete(group.ID)
 		return nil, errors.New("failed to add creator to group")
+	}
+
+	groupInstitution := &GroupInstitution{
+		GroupID:       group.ID,
+		InstitutionID: req.InstitutionID,
+		LinkedAt:      time.Now(),
+	}
+
+	if err := s.repo.AddGroupToInstitution(groupInstitution); err != nil {
+		// Rollback: delete the group and owner membership if institution linking fails
+		s.repo.Delete(group.ID)
+		return nil, errors.New("failed to link group to institution")
 	}
 
 	return group, nil

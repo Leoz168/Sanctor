@@ -7,12 +7,14 @@ import (
 	"net/http"
 	"sanctor/internal/dm"
 	"os"
+	"sanctor/internal/auth"
+	"sanctor/internal/comment"
 	"sanctor/internal/database"
 	"sanctor/internal/group"
+	"sanctor/internal/institution"
 	"sanctor/internal/picture"
 	"sanctor/internal/post"
 	"sanctor/internal/user"
-	"sanctor/internal/auth"
 )
 
 type Response struct {
@@ -29,12 +31,12 @@ func enableCORS(w *http.ResponseWriter) {
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	response := Response{
 		Message: "Sanctor API is running",
 		Status:  "healthy",
 	}
-	
+
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -54,12 +56,12 @@ func main() {
 			defer db.Close()
 
 			// Run auto-migration for core models
-			if err := db.AutoMigrate(&user.User{}, &group.Group{}, &group.UserGroup{}, &picture.Picture{}); err != nil {
+			if err := db.AutoMigrate(&user.User{}, &group.Group{}, &group.UserGroup{}, &picture.Picture{}, &group.GroupInstitution{}); err != nil {
 				log.Printf("⚠️  Failed to migrate core tables: %v", err)
 			}
 
 			// Migrate posts separately (existing data may have type issues)
-			if err := db.AutoMigrate(&post.Post{}); err != nil {
+			if err := db.AutoMigrate(&post.Post{}, &post.PostGroup{}, &post.PostInstitution{}, &comment.Comment{}, &institution.Institution{}); err != nil {
 				log.Printf("⚠️  Failed to migrate posts table: %v", err)
 			}
 
@@ -74,6 +76,8 @@ func main() {
 			user.InitWithDatabase(db)
 			group.InitWithDatabase(db)
 			dm.InitWithDatabase(db)
+			institution.InitWithDatabase(db)
+			comment.InitWithDatabase(db)
 			log.Println("✅ Database initialized successfully")
 		}
 	} else {
@@ -114,23 +118,36 @@ func main() {
 	http.HandleFunc("/api/dm/messages/send", dm.SendMessage)
 	http.HandleFunc("/api/dm/ws", dm.HandleWebSocket)
 
+	// Institution endpoints
+	http.HandleFunc("/api/institutions", institution.GetInstitutions)
+	http.HandleFunc("/api/institutions/get", institution.GetInstitution)
+	http.HandleFunc("/api/institutions/create", institution.CreateInstitution)
+	http.HandleFunc("/api/institutions/update", institution.UpdateInstitution)
+	http.HandleFunc("/api/institutions/delete", institution.DeleteInstitution)
+
 	// Post endpoints - use database if available
 	var postService *post.Service
 	if db != nil {
-		postGormRepo := post.NewGormRepository(db)
-		postService = post.NewServiceWithGorm(postGormRepo)
+		postRepo := post.NewGormRepository(db)
+		postService = post.NewService(postRepo)
 		log.Println("✅ Posts initialized with database")
 	} else {
-		postRepo := post.NewRepository()
-		postService = post.NewService(postRepo)
-		log.Println("⚠️  Posts using in-memory storage")
+		log.Fatal("⚠️  In-memory storage is no longer supported for posts")
 	}
 	postHandler := post.NewHandler(postService)
 	http.HandleFunc("/api/posts", postHandler.GetPosts)
+	http.HandleFunc("/api/posts/search", postHandler.SearchPosts)
 	http.HandleFunc("/api/posts/get", postHandler.GetPost)
 	http.HandleFunc("/api/posts/create", postHandler.CreatePost)
-	http.HandleFunc("/api/posts/update", postHandler.UpdatePost)
+	http.HandleFunc("/posts/", postHandler.UpdatePost) // Updated route for UpdatePost
 	http.HandleFunc("/api/posts/delete", postHandler.DeletePost)
+
+	// Comment endpoints
+	http.HandleFunc("/api/comments", comment.GetComments)
+	http.HandleFunc("/api/comments/get", comment.GetComment)
+	http.HandleFunc("/api/comments/create", comment.CreateComment)
+	http.HandleFunc("/api/comments/update", comment.UpdateComment)
+	http.HandleFunc("/api/comments/delete", comment.DeleteComment)
 
 	// Initialize shared user service
 	userRepo := user.NewRepository()
