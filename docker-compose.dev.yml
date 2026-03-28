@@ -1,10 +1,8 @@
 services:
   backend:
-    build:
-      context: ./apps/api
-      dockerfile: Dockerfile
-      target: builder
+    image: golang:1.23-alpine
     container_name: sanctor-backend-dev
+    working_dir: /app
     ports:
       - "8080:8080"
     volumes:
@@ -17,7 +15,7 @@ services:
     networks:
       - sanctor-network
     restart: unless-stopped
-    command: go run cmd/api/main.go
+    command: sh -c "go mod tidy && go run cmd/api/main.go"
 
   frontend:
     image: node:18-alpine
