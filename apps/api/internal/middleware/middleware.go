@@ -127,7 +127,12 @@ func RateLimitWithRedisByRoute(client *redisclient.Client, routePolicies map[str
 			}
 
 			if client == nil || client.Raw() == nil {
-				next.ServeHTTP(w, r)
+				if cfg.FailOpen {
+					log.Printf("rate limiter redis client uninitialized (fail-open)")
+					next.ServeHTTP(w, r)
+					return
+				}
+				http.Error(w, "Rate limiter unavailable", http.StatusServiceUnavailable)
 				return
 			}
 
@@ -163,13 +168,17 @@ func RateLimitWithRedisByRoute(client *redisclient.Client, routePolicies map[str
 				remaining = 0
 			}
 			resetAt := ((bucket + 1) * windowSeconds)
+			retryAfterSeconds := resetAt - now.Unix()
+			if retryAfterSeconds < 0 {
+				retryAfterSeconds = 0
+			}
 
 			w.Header().Set("X-RateLimit-Limit", strconv.FormatInt(cfg.MaxRequests, 10))
 			w.Header().Set("X-RateLimit-Remaining", strconv.FormatInt(remaining, 10))
 			w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(resetAt, 10))
 
 			if count > cfg.MaxRequests {
-				w.Header().Set("Retry-After", strconv.FormatInt(windowSeconds, 10))
+				w.Header().Set("Retry-After", strconv.FormatInt(retryAfterSeconds, 10))
 				http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
 				return
 			}
@@ -213,12 +222,20 @@ func requestIdentity(r *http.Request) string {
 		return "token:" + hex.EncodeToString(hash[:8])
 	}
 
-	ip := firstNonEmpty(
-		r.Header.Get("X-Forwarded-For"),
-		r.Header.Get("X-Real-IP"),
-	)
-	if ip != "" {
-		return "ip:" + ip
+	// Prefer client IP from X-Forwarded-For (first IP in the list).
+	xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For"))
+	if xff != "" {
+		parts := strings.Split(xff, ",")
+		if len(parts) > 0 {
+			first := strings.TrimSpace(parts[0])
+			if first != "" {
+				return "ip:" + first
+			}
+		}
+	}
+
+	if realIP := strings.TrimSpace(r.Header.Get("X-Real-IP")); realIP != "" {
+		return "ip:" + realIP
 	}
 
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
