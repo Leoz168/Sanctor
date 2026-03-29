@@ -11,7 +11,7 @@ func HashPassword(password string) (string, error) {
 	if len(password) < 8 {
 		return "", errors.New("password must be at least 8 characters")
 	}
-	
+
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
@@ -38,6 +38,22 @@ func ValidateUsername(username string) error {
 	}
 	if len(username) > 20 {
 		return errors.New("username must be less than 20 characters")
+	}
+	return nil
+}
+
+// ValidateRegistrationPassword ensures a password is valid for registration.
+func ValidateRegistrationPassword(password string) error {
+	if len(password) < 8 {
+		return errors.New("password must be at least 8 characters")
+	}
+	return nil
+}
+
+// ValidateNewPassword ensures a password is valid for password change flows.
+func ValidateNewPassword(newPassword string) error {
+	if len(newPassword) < 8 {
+		return errors.New("new password must be at least 8 characters")
 	}
 	return nil
 }
