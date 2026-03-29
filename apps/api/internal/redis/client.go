@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"sanctor/internal/config"
@@ -18,6 +19,28 @@ type Client struct {
 // New creates a Redis client from app configuration.
 func New(cfg config.RedisConfig) (*Client, error) {
 	var options *goredis.Options
+
+	if cfg.SentinelEnabled || strings.TrimSpace(cfg.SentinelAddrs) != "" {
+		sentinelAddrs := splitCSV(cfg.SentinelAddrs)
+		if len(sentinelAddrs) == 0 {
+			return nil, fmt.Errorf("sentinel is enabled but REDIS_SENTINEL_ADDRS is empty")
+		}
+
+		failoverOptions := &goredis.FailoverOptions{
+			MasterName:       cfg.MasterName,
+			SentinelAddrs:    sentinelAddrs,
+			Username:         cfg.Username,
+			Password:         cfg.Password,
+			SentinelUsername: cfg.SentinelUsername,
+			SentinelPassword: cfg.SentinelPassword,
+			DB:               cfg.DB,
+			DialTimeout:      5 * time.Second,
+			ReadTimeout:      3 * time.Second,
+			WriteTimeout:     3 * time.Second,
+		}
+
+		return &Client{inner: goredis.NewFailoverClient(failoverOptions)}, nil
+	}
 
 	if cfg.URL != "" {
 		opts, err := goredis.ParseURL(cfg.URL)
@@ -44,6 +67,25 @@ func New(cfg config.RedisConfig) (*Client, error) {
 	}
 
 	return &Client{inner: goredis.NewClient(options)}, nil
+}
+
+// for parsing sentinel addresses
+func splitCSV(value string) []string {
+	if strings.TrimSpace(value) == "" {
+		return nil
+	}
+
+	parts := strings.Split(value, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		if trimmed == "" {
+			continue
+		}
+		out = append(out, trimmed)
+	}
+
+	return out
 }
 
 // Ping verifies connectivity to Redis.
