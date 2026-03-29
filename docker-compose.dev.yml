@@ -12,10 +12,112 @@ services:
     environment:
       - GO_ENV=development
       - PORT=8080
+      - REDIS_SENTINEL_ENABLED=true
+      - REDIS_MASTER_NAME=mymaster
+      - REDIS_SENTINEL_ADDRS=sentinel1:26379,sentinel2:26379,sentinel3:26379
+      - REDIS_DB=0
+    depends_on:
+      - redis-primary
+      - redis-replica
+      - sentinel1
+      - sentinel2
+      - sentinel3
     networks:
       - sanctor-network
     restart: unless-stopped
     command: sh -c "go mod tidy && go run cmd/api/main.go"
+
+  redis-primary:
+    image: redis:7-alpine
+    container_name: sanctor-redis-primary-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-primary-data:/data
+    networks:
+      - sanctor-network
+    restart: unless-stopped
+
+  redis-replica:
+    image: redis:7-alpine
+    container_name: sanctor-redis-replica-dev
+    command: ["redis-server", "--replicaof", "redis-primary", "6379"]
+    depends_on:
+      - redis-primary
+    networks:
+      - sanctor-network
+    restart: unless-stopped
+
+  sentinel1:
+    image: redis:7-alpine
+    container_name: sanctor-redis-sentinel1-dev
+    command:
+      - sh
+      - -c
+      - |
+        cat <<'EOF' > /tmp/sentinel.conf
+        port 26379
+        sentinel resolve-hostnames yes
+        sentinel monitor mymaster redis-primary 6379 2
+        sentinel down-after-milliseconds mymaster 5000
+        sentinel failover-timeout mymaster 10000
+        sentinel parallel-syncs mymaster 1
+        EOF
+        redis-sentinel /tmp/sentinel.conf
+    depends_on:
+      - redis-primary
+      - redis-replica
+    ports:
+      - "26379:26379"
+    networks:
+      - sanctor-network
+    restart: unless-stopped
+
+  sentinel2:
+    image: redis:7-alpine
+    container_name: sanctor-redis-sentinel2-dev
+    command:
+      - sh
+      - -c
+      - |
+        cat <<'EOF' > /tmp/sentinel.conf
+        port 26379
+        sentinel resolve-hostnames yes
+        sentinel monitor mymaster redis-primary 6379 2
+        sentinel down-after-milliseconds mymaster 5000
+        sentinel failover-timeout mymaster 10000
+        sentinel parallel-syncs mymaster 1
+        EOF
+        redis-sentinel /tmp/sentinel.conf
+    depends_on:
+      - redis-primary
+      - redis-replica
+    networks:
+      - sanctor-network
+    restart: unless-stopped
+
+  sentinel3:
+    image: redis:7-alpine
+    container_name: sanctor-redis-sentinel3-dev
+    command:
+      - sh
+      - -c
+      - |
+        cat <<'EOF' > /tmp/sentinel.conf
+        port 26379
+        sentinel resolve-hostnames yes
+        sentinel monitor mymaster redis-primary 6379 2
+        sentinel down-after-milliseconds mymaster 5000
+        sentinel failover-timeout mymaster 10000
+        sentinel parallel-syncs mymaster 1
+        EOF
+        redis-sentinel /tmp/sentinel.conf
+    depends_on:
+      - redis-primary
+      - redis-replica
+    networks:
+      - sanctor-network
+    restart: unless-stopped
 
   frontend:
     image: node:18-alpine
@@ -36,3 +138,6 @@ services:
 networks:
   sanctor-network:
     driver: bridge
+
+volumes:
+  redis-primary-data:

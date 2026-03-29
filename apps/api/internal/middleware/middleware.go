@@ -2,8 +2,15 @@ package middleware
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
+	"fmt"
 	"log"
+	"net"
 	"net/http"
+	redisclient "sanctor/internal/redis"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -11,10 +18,10 @@ import (
 func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		
+
 		// Call the next handler
 		next.ServeHTTP(w, r)
-		
+
 		// Log request details
 		log.Printf(
 			"%s %s %s %v",
@@ -32,12 +39,12 @@ func CORS(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		
+
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-		
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -64,12 +71,192 @@ func Authenticate(next http.Handler) http.Handler {
 	})
 }
 
+// RateLimitConfig controls Redis-backed fixed-window rate limiting.
+type RateLimitConfig struct {
+	Prefix      string
+	Window      time.Duration
+	MaxRequests int64
+	FailOpen    bool
+}
+
+// DefaultRateLimitConfig returns conservative defaults for public APIs.
+func DefaultRateLimitConfig() RateLimitConfig {
+	return RateLimitConfig{
+		Prefix:      "rl",
+		Window:      time.Minute,
+		MaxRequests: 120,
+		FailOpen:    true,
+	}
+}
+
 // RateLimit is a middleware that limits request rate
 func RateLimit(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Implement rate limiting logic
-		next.ServeHTTP(w, r)
-	})
+	return RateLimitWithRedis(nil, DefaultRateLimitConfig())(next)
+}
+
+// RateLimitWithRedis enforces per-identity, per-route limits backed by Redis.
+func RateLimitWithRedis(client *redisclient.Client, cfg RateLimitConfig) func(http.Handler) http.Handler {
+	cfg = sanitizeRateLimitConfig(cfg)
+
+	return RateLimitWithRedisByRoute(client, map[string]RateLimitConfig{}, cfg)
+}
+
+// RateLimitWithRedisByRoute applies route-prefix overrides on top of a default fixed-window policy.
+func RateLimitWithRedisByRoute(client *redisclient.Client, routePolicies map[string]RateLimitConfig, defaultCfg RateLimitConfig) func(http.Handler) http.Handler {
+	defaultCfg = sanitizeRateLimitConfig(defaultCfg)
+
+	sanitizedPolicies := make(map[string]RateLimitConfig, len(routePolicies))
+	for prefix, cfg := range routePolicies {
+		normalizedPrefix := strings.TrimSpace(prefix)
+		if normalizedPrefix == "" {
+			continue
+		}
+		if !strings.HasPrefix(normalizedPrefix, "/") {
+			normalizedPrefix = "/" + normalizedPrefix
+		}
+		sanitizedPolicies[normalizedPrefix] = sanitizeRateLimitConfig(cfg)
+	}
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			cfg := resolveRateLimitConfig(r.URL.Path, sanitizedPolicies, defaultCfg)
+
+			if r.Method == http.MethodOptions {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			if client == nil || client.Raw() == nil {
+				if cfg.FailOpen {
+					log.Printf("rate limiter redis client uninitialized (fail-open)")
+					next.ServeHTTP(w, r)
+					return
+				}
+				http.Error(w, "Rate limiter unavailable", http.StatusServiceUnavailable)
+				return
+			}
+
+			identity := requestIdentity(r)
+			now := time.Now().UTC()
+			windowSeconds := int64(cfg.Window / time.Second)
+			if windowSeconds <= 0 {
+				windowSeconds = 60
+			}
+
+			bucket := now.Unix() / windowSeconds
+			key := fmt.Sprintf("%s:%s:%s:%d", cfg.Prefix, r.URL.Path, identity, bucket)
+
+			ctx, cancel := context.WithTimeout(r.Context(), 200*time.Millisecond)
+			defer cancel()
+
+			pipe := client.Raw().TxPipeline()
+			countCmd := pipe.Incr(ctx, key)
+			pipe.Expire(ctx, key, cfg.Window)
+			if _, err := pipe.Exec(ctx); err != nil {
+				if cfg.FailOpen {
+					log.Printf("rate limiter redis error (fail-open): %v", err)
+					next.ServeHTTP(w, r)
+					return
+				}
+				http.Error(w, "Rate limiter unavailable", http.StatusServiceUnavailable)
+				return
+			}
+
+			count := countCmd.Val()
+			remaining := cfg.MaxRequests - count
+			if remaining < 0 {
+				remaining = 0
+			}
+			resetAt := ((bucket + 1) * windowSeconds)
+			retryAfterSeconds := resetAt - now.Unix()
+			if retryAfterSeconds < 0 {
+				retryAfterSeconds = 0
+			}
+
+			w.Header().Set("X-RateLimit-Limit", strconv.FormatInt(cfg.MaxRequests, 10))
+			w.Header().Set("X-RateLimit-Remaining", strconv.FormatInt(remaining, 10))
+			w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(resetAt, 10))
+
+			if count > cfg.MaxRequests {
+				w.Header().Set("Retry-After", strconv.FormatInt(retryAfterSeconds, 10))
+				http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func sanitizeRateLimitConfig(cfg RateLimitConfig) RateLimitConfig {
+	if cfg.Prefix == "" {
+		cfg.Prefix = "rl"
+	}
+	if cfg.Window <= 0 {
+		cfg.Window = time.Minute
+	}
+	if cfg.MaxRequests <= 0 {
+		cfg.MaxRequests = 120
+	}
+	return cfg
+}
+
+func resolveRateLimitConfig(path string, routePolicies map[string]RateLimitConfig, defaultCfg RateLimitConfig) RateLimitConfig {
+	selected := defaultCfg
+	bestPrefixLen := -1
+
+	for prefix, cfg := range routePolicies {
+		if strings.HasPrefix(path, prefix) && len(prefix) > bestPrefixLen {
+			selected = cfg
+			bestPrefixLen = len(prefix)
+		}
+	}
+
+	return selected
+}
+
+func requestIdentity(r *http.Request) string {
+	auth := r.Header.Get("Authorization")
+	if auth != "" {
+		hash := sha1.Sum([]byte(auth))
+		return "token:" + hex.EncodeToString(hash[:8])
+	}
+
+	// Prefer client IP from X-Forwarded-For (first IP in the list).
+	xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For"))
+	if xff != "" {
+		parts := strings.Split(xff, ",")
+		if len(parts) > 0 {
+			first := strings.TrimSpace(parts[0])
+			if first != "" {
+				return "ip:" + first
+			}
+		}
+	}
+
+	if realIP := strings.TrimSpace(r.Header.Get("X-Real-IP")); realIP != "" {
+		return "ip:" + realIP
+	}
+
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err == nil && host != "" {
+		return "ip:" + host
+	}
+
+	if r.RemoteAddr != "" {
+		return "ip:" + r.RemoteAddr
+	}
+
+	return "ip:unknown"
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 // ValidateJWT validates a JWT token and returns the claims

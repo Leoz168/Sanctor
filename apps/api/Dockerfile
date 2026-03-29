@@ -15,8 +15,9 @@ COPY . .
 # Ensure go.sum is up-to-date
 RUN go mod tidy
 
-# Build the application from cmd/api
+# Build binaries for API server and migrations
 RUN go build -o main ./cmd/api
+RUN go build -o migrate ./cmd/migrate
 
 # Final stage
 FROM alpine:latest
@@ -27,6 +28,7 @@ WORKDIR /root/
 
 # Copy the binary from builder
 COPY --from=builder /app/main .
+COPY --from=builder /app/migrate .
 
 # Set the entrypoint to the compiled binary
 ENTRYPOINT ["/root/main"]

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,12 +10,16 @@ import (
 	"os"
 	"sanctor/internal/auth"
 	"sanctor/internal/comment"
+	"sanctor/internal/config"
 	"sanctor/internal/database"
 	"sanctor/internal/group"
 	"sanctor/internal/institution"
+	"sanctor/internal/middleware"
 	"sanctor/internal/picture"
 	"sanctor/internal/post"
+	redisclient "sanctor/internal/redis"
 	"sanctor/internal/user"
+	"time"
 )
 
 type Response struct {
@@ -41,6 +46,9 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	appConfig := config.Load()
+	var err error
+
 	// Initialize database connection if DATABASE_URL is set
 	var db *database.DB
 	databaseURL := os.Getenv("DATABASE_URL")
@@ -82,6 +90,28 @@ func main() {
 		}
 	} else {
 		log.Println("⚠️  No DATABASE_URL found, using in-memory storage")
+	}
+
+	// Initialize Redis client for shared cache/rate-limit use cases.
+	var redisClient *redisclient.Client
+	redisClient, err = redisclient.New(appConfig.Redis)
+	if err != nil {
+		log.Printf("⚠️  Failed to initialize Redis client: %v", err)
+	} else {
+		defer func() {
+			if closeErr := redisClient.Close(); closeErr != nil {
+				log.Printf("⚠️  Failed to close Redis client: %v", closeErr)
+			}
+		}()
+
+		pingCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+
+		if pingErr := redisClient.Ping(pingCtx); pingErr != nil {
+			log.Printf("⚠️  Redis is not reachable: %v", pingErr)
+		} else {
+			log.Println("✅ Redis initialized successfully")
+		}
 	}
 
 	// Health check endpoints
@@ -164,6 +194,27 @@ func main() {
 		port = "8080"
 	}
 
+	defaultRateLimit := middleware.DefaultRateLimitConfig()
+	defaultRateLimit.MaxRequests = 120
+
+	routeRateLimits := map[string]middleware.RateLimitConfig{
+		"/api/auth": {
+			Prefix:      "rl:auth",
+			Window:      time.Minute,
+			MaxRequests: 20,
+			FailOpen:    true,
+		},
+		"/api/posts/search": {
+			Prefix:      "rl:search",
+			Window:      time.Minute,
+			MaxRequests: 60,
+			FailOpen:    true,
+		},
+	}
+
+	rateLimited := middleware.RateLimitWithRedisByRoute(redisClient, routeRateLimits, defaultRateLimit)(http.DefaultServeMux)
+	handler := middleware.Logger(middleware.CORS(rateLimited))
+
 	fmt.Printf("Server starting on port %s...\n", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, handler))
 }

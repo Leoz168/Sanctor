@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
+	Redis    RedisConfig
 	Auth     AuthConfig
 }
 
@@ -26,6 +27,21 @@ type DatabaseConfig struct {
 	User     string
 	Password string
 	DBName   string
+}
+
+// RedisConfig holds Redis configuration
+type RedisConfig struct {
+	URL              string
+	Host             string
+	Port             int
+	Username         string
+	Password         string
+	DB               int
+	SentinelEnabled  bool
+	MasterName       string
+	SentinelAddrs    string
+	SentinelUsername string
+	SentinelPassword string
 }
 
 // AuthConfig holds authentication configuration
@@ -50,6 +66,19 @@ func Load() *Config {
 			Password: getEnv("DB_PASSWORD", ""),
 			DBName:   getEnv("DB_NAME", "sanctor"),
 		},
+		Redis: RedisConfig{
+			URL:              getEnv("REDIS_URL", "redis://localhost:6379/0"),
+			Host:             getEnv("REDIS_HOST", "localhost"),
+			Port:             getEnvInt("REDIS_PORT", 6379),
+			Username:         getEnv("REDIS_USERNAME", ""),
+			Password:         getEnv("REDIS_PASSWORD", ""),
+			DB:               getEnvInt("REDIS_DB", 0),
+			SentinelEnabled:  getEnvBool("REDIS_SENTINEL_ENABLED", false),
+			MasterName:       getEnv("REDIS_MASTER_NAME", "mymaster"),
+			SentinelAddrs:    getEnv("REDIS_SENTINEL_ADDRS", ""),
+			SentinelUsername: getEnv("REDIS_SENTINEL_USERNAME", ""),
+			SentinelPassword: getEnv("REDIS_SENTINEL_PASSWORD", ""),
+		},
 		Auth: AuthConfig{
 			JWTSecret:     getEnv("JWT_SECRET", "your-secret-key"),
 			TokenExpiry:   getEnvInt("TOKEN_EXPIRY", 24),
@@ -71,6 +100,16 @@ func getEnvInt(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intValue, err := strconv.Atoi(value); err == nil {
 			return intValue
+		}
+	}
+	return defaultValue
+}
+
+// getEnvBool gets a boolean environment variable with a fallback default value
+func getEnvBool(key string, defaultValue bool) bool {
+	if value := os.Getenv(key); value != "" {
+		if boolValue, err := strconv.ParseBool(value); err == nil {
+			return boolValue
 		}
 	}
 	return defaultValue
