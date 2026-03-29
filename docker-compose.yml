@@ -13,13 +13,29 @@ services:
     environment:
       - GO_ENV=production
       - PORT=8080
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
     depends_on:
       - redis
     networks:
       - sanctor-network
     restart: unless-stopped
-    command: ["go", "run", "cmd/migrate/main.go"]
+
+  migrate:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: sanctor-migrate
+    env_file:
+      - .env
+    environment:
+      - GO_ENV=production
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+    depends_on:
+      - redis
+    networks:
+      - sanctor-network
+    restart: "no"
+    command: ["/root/migrate"]
 
   redis:
     image: redis:7-alpine
