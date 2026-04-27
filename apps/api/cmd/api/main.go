@@ -12,7 +12,7 @@ import (
 	"sanctor/internal/comment"
 	"sanctor/internal/config"
 	"sanctor/internal/database"
-	"sanctor/internal/dm"
+	//"sanctor/internal/dm" //  not currently used, but will be needed for future DM features
 	"sanctor/internal/group"
 	"sanctor/internal/institution"
 	"sanctor/internal/middleware"
