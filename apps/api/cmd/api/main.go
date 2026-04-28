@@ -123,21 +123,21 @@ func main() {
 	http.HandleFunc("/api/users/update", authRequired(user.UpdateUser))
 	http.HandleFunc("/api/users/delete", authRequired(user.DeleteUser))
 
-	// Group endpoints
-	http.HandleFunc("/api/groups", authRequired(community.GetGroups))
-	http.HandleFunc("/api/groups/get", authRequired(community.GetGroup))
-	http.HandleFunc("/api/groups/create", authRequired(community.CreateGroup))
-	http.HandleFunc("/api/groups/update", authRequired(community.UpdateGroup))
-	http.HandleFunc("/api/groups/delete", authRequired(community.DeleteGroup))
+	// Community endpoints
+	http.HandleFunc("/api/communities", authRequired(community.GetGroups))
+	http.HandleFunc("/api/communities/get", authRequired(community.GetGroup))
+	http.HandleFunc("/api/communities/create", authRequired(community.CreateGroup))
+	http.HandleFunc("/api/communities/update", authRequired(community.UpdateGroup))
+	http.HandleFunc("/api/communities/delete", authRequired(community.DeleteGroup))
 
-	// Group membership endpoints
-	http.HandleFunc("/api/groups/members/add", authRequired(community.AddUserToGroup))
-	http.HandleFunc("/api/groups/members/remove", authRequired(community.RemoveUserFromGroup))
-	http.HandleFunc("/api/groups/members", authRequired(community.GetGroupMembers))
-	http.HandleFunc("/api/users/groups", authRequired(community.GetUserGroups))
+	// Community membership endpoints
+	http.HandleFunc("/api/communities/members/add", authRequired(community.AddUserToGroup))
+	http.HandleFunc("/api/communities/members/remove", authRequired(community.RemoveUserFromGroup))
+	http.HandleFunc("/api/communities/members", authRequired(community.GetGroupMembers))
+	http.HandleFunc("/api/users/communities", authRequired(community.GetUserGroups))
 
-	// Group messaging endpoints
-	http.HandleFunc("/api/groups/messages/send", authRequired(community.SendGroupMessage))
+	// Community messaging endpoints
+	http.HandleFunc("/api/communities/messages/send", authRequired(community.SendGroupMessage))
 
 	// DM endpoints
 	http.HandleFunc("/api/dm/groups/direct", authRequired(dm.CreateDirectGroup))
@@ -145,7 +145,6 @@ func main() {
 	http.HandleFunc("/api/dm/messages", authRequired(dm.GetMessages))
 	http.HandleFunc("/api/dm/messages/send", authRequired(dm.SendMessage))
 	http.HandleFunc("/api/dm/ws", dm.HandleWebSocket)
->>>>>>> origin/gorm-improvements
 
 	// Institution endpoints
 	http.HandleFunc("/api/institutions", authRequired(institution.GetInstitutions))
