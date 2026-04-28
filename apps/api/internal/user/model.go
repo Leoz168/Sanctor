@@ -1,13 +1,15 @@
 package user
 
 import (
-	sharedtypes "sanctor/pkg/types"
 	"time"
+
+	"github.com/google/uuid"
+	sharedtypes "sanctor/pkg/types"
 )
 
 // User represents a user in the system
 type User struct {
-	ID            string             `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID            uuid.UUID          `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
 	Email         string             `json:"email" gorm:"type:varchar(255);not null;uniqueIndex"`
 	Username      string             `json:"username" gorm:"type:varchar(100);not null;uniqueIndex"`
 	FirstName     string             `json:"firstName" gorm:"type:varchar(100)"`
@@ -22,7 +24,7 @@ type User struct {
 	UpdatedAt     time.Time          `json:"updatedAt" gorm:"autoUpdateTime"`
 	Gender        sharedtypes.Gender `json:"gender,omitempty" gorm:"type:varchar(20)"`
 	Age           *int               `json:"age,omitempty"`
-	InstitutionID *string            `json:"institutionId,omitempty" gorm:"column:institution_id;type:uuid;index"`
+	InstitutionID *uuid.UUID         `json:"institutionId,omitempty" gorm:"column:institution_id;type:uuid;index"`
 	Major         *string            `json:"major,omitempty" gorm:"type:varchar(100)"`
 }
 
@@ -53,7 +55,7 @@ func (u *User) ToPublicUser() *PublicUser {
 
 // PublicUser represents user data safe for public display
 type PublicUser struct {
-	ID            string             `json:"id"`
+	ID            uuid.UUID          `json:"id"`
 	Username      string             `json:"username"`
 	FirstName     string             `json:"firstName,omitempty"`
 	LastName      string             `json:"lastName,omitempty"`
@@ -61,7 +63,7 @@ type PublicUser struct {
 	Bio           string             `json:"bio,omitempty"`
 	Gender        sharedtypes.Gender `json:"gender,omitempty"`
 	Age           *int               `json:"age,omitempty"`
-	InstitutionID *string            `json:"institutionId,omitempty"`
+	InstitutionID *uuid.UUID         `json:"institutionId,omitempty"`
 	Major         *string            `json:"major,omitempty"`
 	CreatedAt     time.Time          `json:"createdAt"`
 }

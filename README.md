@@ -57,7 +57,8 @@ Build and run both services with Docker Compose:
 
 ```bash
 docker-compose up --build
-docker compose -f docker-compose.dev.yml up --build # Docker dev mode
+docker compose -f docker-compose.dev.yml up --build # Docker dev mode (full stack)
+docker compose -f docker-compose.dev.yml up --build backend # Docker dev mode (backend only)
 ```
 
 Access the application:
@@ -70,6 +71,7 @@ For development with volume mounting and hot reloading:
 
 ```bash
 docker-compose -f docker-compose.dev.yml up
+docker compose -f docker-compose.dev.yml up --build backend
 ```
 apps/
 │   ├── backend/              # Go REST API

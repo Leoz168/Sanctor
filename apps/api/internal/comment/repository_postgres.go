@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	"sanctor/internal/database"
+
+	"github.com/google/uuid"
 )
 
 // PostgresRepository implements Repository for PostgreSQL.
@@ -30,6 +32,10 @@ func (r *PostgresRepository) Create(comment *Comment) error {
 }
 
 func (r *PostgresRepository) FindByID(id string) (*Comment, error) {
+	commentID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, errors.New("invalid comment ID format")
+	}
 	comment := &Comment{}
 	query := `
 		SELECT id, post_id, created_by_user_id, content, created_at, updated_at, deleted_at
@@ -37,7 +43,7 @@ func (r *PostgresRepository) FindByID(id string) (*Comment, error) {
 		WHERE id = $1 AND deleted_at IS NULL
 	`
 
-	err := r.db.QueryRow(query, id).Scan(
+	err = r.db.QueryRow(query, commentID).Scan(
 		&comment.ID, &comment.PostID, &comment.CreatedByUserID, &comment.Content,
 		&comment.CreatedAt, &comment.UpdatedAt, &comment.DeletedAt,
 	)
@@ -51,6 +57,10 @@ func (r *PostgresRepository) FindByID(id string) (*Comment, error) {
 }
 
 func (r *PostgresRepository) FindByPostID(postID string) []*Comment {
+	postUUID, err := uuid.Parse(postID)
+	if err != nil {
+		return []*Comment{}
+	}
 	query := `
 		SELECT id, post_id, created_by_user_id, content, created_at, updated_at, deleted_at
 		FROM comments
@@ -58,7 +68,7 @@ func (r *PostgresRepository) FindByPostID(postID string) []*Comment {
 		ORDER BY created_at ASC
 	`
 
-	rows, err := r.db.Query(query, postID)
+	rows, err := r.db.Query(query, postUUID)
 	if err != nil {
 		return []*Comment{}
 	}
@@ -95,12 +105,16 @@ func (r *PostgresRepository) Update(comment *Comment) error {
 }
 
 func (r *PostgresRepository) Delete(id string) error {
+	commentID, err := uuid.Parse(id)
+	if err != nil {
+		return errors.New("invalid comment ID format")
+	}
 	query := `
 		UPDATE comments
 		SET deleted_at = NOW(), updated_at = NOW()
 		WHERE id = $1 AND deleted_at IS NULL
 	`
-	result, err := r.db.Exec(query, id)
+	result, err := r.db.Exec(query, commentID)
 	if err != nil {
 		return err
 	}
@@ -112,15 +126,23 @@ func (r *PostgresRepository) Delete(id string) error {
 }
 
 func (r *PostgresRepository) ExistsPost(postID string) bool {
+	postUUID, err := uuid.Parse(postID)
+	if err != nil {
+		return false
+	}
 	var exists bool
 	query := `SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1)`
-	_ = r.db.QueryRow(query, postID).Scan(&exists)
+	_ = r.db.QueryRow(query, postUUID).Scan(&exists)
 	return exists
 }
 
 func (r *PostgresRepository) ExistsUser(userID string) bool {
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return false
+	}
 	var exists bool
 	query := `SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)`
-	_ = r.db.QueryRow(query, userID).Scan(&exists)
+	_ = r.db.QueryRow(query, userUUID).Scan(&exists)
 	return exists
 }

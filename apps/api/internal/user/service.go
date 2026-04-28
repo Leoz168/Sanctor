@@ -51,22 +51,31 @@ func (s *Service) CreateUser(req CreateUserRequest) (*User, error) {
 		return nil, errors.New("failed to hash password")
 	}
 
+	var institutionID *uuid.UUID
+	if req.InstitutionID != nil && *req.InstitutionID != "" {
+		parsed, err := uuid.Parse(*req.InstitutionID)
+		if err != nil {
+			return nil, errors.New("invalid institution ID format")
+		}
+		institutionID = &parsed
+	}
+
 	// Create user
 	user := &User{
-		ID:           uuid.New().String(),
-		Email:        req.Email,
-		Username:     req.Username,
-		FirstName:    req.FirstName,
-		LastName:     req.LastName,
-		PasswordHash: hashedPassword,
-		Gender:       req.Gender,
-		Age:          req.Age,
-		InstitutionID: req.InstitutionID,
-		Major:        req.Major,
-		IsActive:     true,
-		IsVerified:   false,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		ID:            uuid.New(),
+		Email:         req.Email,
+		Username:      req.Username,
+		FirstName:     req.FirstName,
+		LastName:      req.LastName,
+		PasswordHash:  hashedPassword,
+		Gender:        req.Gender,
+		Age:           req.Age,
+		InstitutionID: institutionID,
+		Major:         req.Major,
+		IsActive:      true,
+		IsVerified:    false,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
 	}
 
 	if err := s.repo.Create(user); err != nil {
@@ -125,7 +134,15 @@ func (s *Service) UpdateUser(id string, req UpdateUserRequest) (*User, error) {
 		user.Age = req.Age
 	}
 	if req.InstitutionID != nil {
-		user.InstitutionID = req.InstitutionID
+		if *req.InstitutionID == "" {
+			user.InstitutionID = nil
+		} else {
+			parsed, err := uuid.Parse(*req.InstitutionID)
+			if err != nil {
+				return nil, errors.New("invalid institution ID format")
+			}
+			user.InstitutionID = &parsed
+		}
 	}
 	if req.Major != nil {
 		user.Major = req.Major

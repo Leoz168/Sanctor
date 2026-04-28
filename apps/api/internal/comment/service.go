@@ -23,13 +23,15 @@ func (s *Service) CreateComment(req CreateCommentRequest) (*Comment, error) {
 	if req.PostID == "" {
 		return nil, errors.New("post ID is required")
 	}
-	if _, err := uuid.Parse(req.PostID); err != nil {
+	postUUID, err := uuid.Parse(req.PostID)
+	if err != nil {
 		return nil, errors.New("invalid post ID format")
 	}
 	if req.CreatedByUserID == "" {
 		return nil, errors.New("created by user ID is required")
 	}
-	if _, err := uuid.Parse(req.CreatedByUserID); err != nil {
+	userUUID, err := uuid.Parse(req.CreatedByUserID)
+	if err != nil {
 		return nil, errors.New("invalid created by user ID format")
 	}
 	content := strings.TrimSpace(req.Content)
@@ -49,9 +51,9 @@ func (s *Service) CreateComment(req CreateCommentRequest) (*Comment, error) {
 
 	now := time.Now()
 	comment := &Comment{
-		ID:              uuid.New().String(),
-		PostID:          req.PostID,
-		CreatedByUserID: req.CreatedByUserID,
+		ID:              uuid.New(),
+		PostID:          postUUID,
+		CreatedByUserID: userUUID,
 		Content:         content,
 		CreatedAt:       now,
 		UpdatedAt:       now,

@@ -58,6 +58,12 @@ docker build -t sanctor-backend .
 docker run -p 8080:8080 sanctor-backend
 ```
 
+### With Docker Compose (Dev)
+
+```bash
+docker compose -f ../../docker-compose.dev.yml up --build backend
+```
+
 ### Testing
 
 ```bash

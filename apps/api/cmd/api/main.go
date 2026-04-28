@@ -80,6 +80,9 @@ func main() {
 				log.Println("✅ DM tables migrated successfully")
 			}
 
+			// Apply SQL migrations after GORM has created base tables
+			db.RunSQLMigrations()
+
 			log.Println("Initializing modules with database...")
 			user.InitWithDatabase(db)
 			group.InitWithDatabase(db)

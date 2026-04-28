@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	"sanctor/internal/database"
+
+	"github.com/google/uuid"
 )
 
 // PostgresRepository implements Repository for PostgreSQL
@@ -27,9 +29,13 @@ func (r *PostgresRepository) Create(institution *Institution) error {
 }
 
 func (r *PostgresRepository) FindByID(id string) (*Institution, error) {
+	instUUID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, errors.New("invalid institution ID format")
+	}
 	inst := &Institution{}
 	query := `SELECT id, name, country, region FROM institutions WHERE id = $1`
-	err := r.db.QueryRow(query, id).Scan(&inst.ID, &inst.Name, &inst.Country, &inst.Region)
+	err = r.db.QueryRow(query, instUUID).Scan(&inst.ID, &inst.Name, &inst.Country, &inst.Region)
 	if err == sql.ErrNoRows {
 		return nil, errors.New("institution not found")
 	}
@@ -68,8 +74,12 @@ func (r *PostgresRepository) Update(institution *Institution) error {
 }
 
 func (r *PostgresRepository) Delete(id string) error {
+	instUUID, err := uuid.Parse(id)
+	if err != nil {
+		return errors.New("invalid institution ID format")
+	}
 	query := `DELETE FROM institutions WHERE id = $1`
-	result, err := r.db.Exec(query, id)
+	result, err := r.db.Exec(query, instUUID)
 	if err != nil {
 		return err
 	}

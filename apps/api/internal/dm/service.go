@@ -32,9 +32,18 @@ func (s *Service) CreateOrGetDirectGroup(userID, peerUserID string) (*DMGroup, e
 		return nil, err
 	}
 
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, errors.New("invalid userId format")
+	}
+	peerUUID, err := uuid.Parse(peerUserID)
+	if err != nil {
+		return nil, errors.New("invalid peerUserId format")
+	}
+
 	now := time.Now()
 	newGroup := &DMGroup{
-		ID:        uuid.New().String(),
+		ID:        uuid.New(),
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -43,11 +52,11 @@ func (s *Service) CreateOrGetDirectGroup(userID, peerUserID string) (*DMGroup, e
 		return nil, err
 	}
 
-	if err := s.repo.AddUserToGroup(&DMGroupUser{GroupID: newGroup.ID, UserID: userID, JoinedAt: now}); err != nil {
+	if err := s.repo.AddUserToGroup(&DMGroupUser{GroupID: newGroup.ID, UserID: userUUID, JoinedAt: now}); err != nil {
 		return nil, err
 	}
 
-	if err := s.repo.AddUserToGroup(&DMGroupUser{GroupID: newGroup.ID, UserID: peerUserID, JoinedAt: now}); err != nil {
+	if err := s.repo.AddUserToGroup(&DMGroupUser{GroupID: newGroup.ID, UserID: peerUUID, JoinedAt: now}); err != nil {
 		return nil, err
 	}
 
@@ -66,6 +75,15 @@ func (s *Service) SendMessage(req SendMessageRequest) (*DMMessage, error) {
 		return nil, errors.New("groupId and userId are required")
 	}
 
+	groupUUID, err := uuid.Parse(req.GroupID)
+	if err != nil {
+		return nil, errors.New("invalid groupId format")
+	}
+	userUUID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		return nil, errors.New("invalid userId format")
+	}
+
 	content := strings.TrimSpace(req.Content)
 	if content == "" {
 		return nil, errors.New("content is required")
@@ -75,13 +93,14 @@ func (s *Service) SendMessage(req SendMessageRequest) (*DMMessage, error) {
 		return nil, ErrNotDMMember
 	}
 
+	now := time.Now()
 	message := &DMMessage{
-		ID:          uuid.New().String(),
-		GroupID:     req.GroupID,
-		UserID:      req.UserID,
+		ID:          uuid.New(),
+		GroupID:     groupUUID,
+		UserID:      userUUID,
 		Content:     content,
-		MessageTime: time.Now(),
-		CreatedAt:   time.Now(),
+		MessageTime: now,
+		CreatedAt:   now,
 	}
 
 	if err := s.repo.SaveMessage(message); err != nil {

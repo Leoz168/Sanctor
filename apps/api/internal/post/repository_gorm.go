@@ -4,6 +4,7 @@ import (
 	"sanctor/internal/database"
 	"strings"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -20,7 +21,7 @@ func NewGormRepository(db *database.DB) *GormRepository {
 }
 
 // Create adds a new post
-func (r *GormRepository) CreateWithLinks(post *Post, groupIDs []string, institutionIDs []string) (*Post, error) {
+func (r *GormRepository) CreateWithLinks(post *Post, groupIDs []uuid.UUID, institutionIDs []uuid.UUID) (*Post, error) {
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(post).Error; err != nil {
 			return err
@@ -68,8 +69,12 @@ func (r *GormRepository) CreateWithLinks(post *Post, groupIDs []string, institut
 
 // FindByID retrieves a post by ID
 func (r *GormRepository) FindByID(id string) (*Post, error) {
+	postUUID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, err
+	}
 	var post Post
-	err := r.db.Where("id = ?", id).First(&post).Error
+	err = r.db.Where("id = ?", postUUID).First(&post).Error
 	if err != nil {
 		return nil, err
 	}
@@ -85,8 +90,12 @@ func (r *GormRepository) FindAll() ([]*Post, error) {
 
 // FindByUserID retrieves all posts for a specific user
 func (r *GormRepository) FindByUserID(userID string) ([]*Post, error) {
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, err
+	}
 	var posts []*Post
-	err := r.db.Where("user_id = ?", userID).Find(&posts).Error
+	err = r.db.Where("user_id = ?", userUUID).Find(&posts).Error
 	return posts, err
 }
 
@@ -97,7 +106,11 @@ func (r *GormRepository) Update(post *Post) error {
 
 // Delete removes a post
 func (r *GormRepository) Delete(id string) error {
-	return r.db.Delete(&Post{}, "id = ?", id).Error
+	postUUID, err := uuid.Parse(id)
+	if err != nil {
+		return err
+	}
+	return r.db.Delete(&Post{}, "id = ?", postUUID).Error
 }
 
 // Search posts by filters
@@ -142,10 +155,18 @@ func (r *GormRepository) Search(filters PostSearchFilters) ([]*Post, error) {
 	}
 
 	if gid := strings.TrimSpace(filters.GroupID); gid != "" {
-		query = query.Joins("JOIN post_groups ON post_groups.post_id = posts.id").Where("post_groups.group_id = ?", gid)
+		groupUUID, err := uuid.Parse(gid)
+		if err != nil {
+			return nil, err
+		}
+		query = query.Joins("JOIN post_groups ON post_groups.post_id = posts.id").Where("post_groups.group_id = ?", groupUUID)
 	}
 	if iid := strings.TrimSpace(filters.InstitutionID); iid != "" {
-		query = query.Joins("JOIN post_institutions ON post_institutions.post_id = posts.id").Where("post_institutions.institution_id = ?", iid)
+		institutionUUID, err := uuid.Parse(iid)
+		if err != nil {
+			return nil, err
+		}
+		query = query.Joins("JOIN post_institutions ON post_institutions.post_id = posts.id").Where("post_institutions.institution_id = ?", institutionUUID)
 	}
 
 	query = query.Distinct("posts.*")

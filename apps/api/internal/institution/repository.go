@@ -17,7 +17,7 @@ func (r *InMemoryRepository) Create(institution *Institution) error {
 	if institution == nil {
 		return errors.New("institution cannot be nil")
 	}
-	r.institutions[institution.ID] = institution
+	r.institutions[institution.ID.String()] = institution
 	return nil
 }
 
@@ -41,10 +41,10 @@ func (r *InMemoryRepository) Update(institution *Institution) error {
 	if institution == nil {
 		return errors.New("institution cannot be nil")
 	}
-	if _, exists := r.institutions[institution.ID]; !exists {
+	if _, exists := r.institutions[institution.ID.String()]; !exists {
 		return errors.New("institution not found")
 	}
-	r.institutions[institution.ID] = institution
+	r.institutions[institution.ID.String()] = institution
 	return nil
 }
 

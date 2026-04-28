@@ -29,7 +29,7 @@ func (r *InMemoryRepository) Create(group *Group) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.groups[group.ID] = group
+	r.groups[group.ID.String()] = group
 	return nil
 }
 
@@ -62,10 +62,10 @@ func (r *InMemoryRepository) Update(group *Group) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if _, exists := r.groups[group.ID]; !exists {
+	if _, exists := r.groups[group.ID.String()]; !exists {
 		return errors.New("group not found")
 	}
-	r.groups[group.ID] = group
+	r.groups[group.ID.String()] = group
 	return nil
 }
 
@@ -89,7 +89,7 @@ func (r *InMemoryRepository) Delete(id string) error {
 	for userID, userGroupsList := range r.userGroups {
 		newList := make([]*UserGroup, 0)
 		for _, ug := range userGroupsList {
-			if ug.GroupID != id {
+			if ug.GroupID.String() != id {
 				newList = append(newList, ug)
 			}
 		}
@@ -105,20 +105,20 @@ func (r *InMemoryRepository) AddUserToGroup(userGroup *UserGroup) error {
 	defer r.mu.Unlock()
 
 	// Check if group exists
-	if _, exists := r.groups[userGroup.GroupID]; !exists {
+	if _, exists := r.groups[userGroup.GroupID.String()]; !exists {
 		return errors.New("group not found")
 	}
 
 	// Check if user is already in group
-	if r.isUserInGroup(userGroup.UserID, userGroup.GroupID) {
+	if r.isUserInGroup(userGroup.UserID.String(), userGroup.GroupID.String()) {
 		return errors.New("user already in group")
 	}
 
 	// Add to groupUsers
-	r.groupUsers[userGroup.GroupID] = append(r.groupUsers[userGroup.GroupID], userGroup)
+	r.groupUsers[userGroup.GroupID.String()] = append(r.groupUsers[userGroup.GroupID.String()], userGroup)
 
 	// Add to userGroups
-	r.userGroups[userGroup.UserID] = append(r.userGroups[userGroup.UserID], userGroup)
+	r.userGroups[userGroup.UserID.String()] = append(r.userGroups[userGroup.UserID.String()], userGroup)
 
 	return nil
 }
@@ -128,17 +128,17 @@ func (r *InMemoryRepository) AddGroupToInstitution(groupInstitution *GroupInstit
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if _, exists := r.groups[groupInstitution.GroupID]; !exists {
+	if _, exists := r.groups[groupInstitution.GroupID.String()]; !exists {
 		return errors.New("group not found")
 	}
 
-	for _, gi := range r.groupInstitutions[groupInstitution.GroupID] {
+	for _, gi := range r.groupInstitutions[groupInstitution.GroupID.String()] {
 		if gi.InstitutionID == groupInstitution.InstitutionID {
 			return errors.New("group already linked to institution")
 		}
 	}
 
-	r.groupInstitutions[groupInstitution.GroupID] = append(r.groupInstitutions[groupInstitution.GroupID], groupInstitution)
+	r.groupInstitutions[groupInstitution.GroupID.String()] = append(r.groupInstitutions[groupInstitution.GroupID.String()], groupInstitution)
 	return nil
 }
 
@@ -154,7 +154,7 @@ func (r *InMemoryRepository) RemoveUserFromGroup(userID, groupID string) error {
 	// Remove from groupUsers
 	newGroupUsers := make([]*UserGroup, 0)
 	for _, ug := range r.groupUsers[groupID] {
-		if ug.UserID != userID {
+		if ug.UserID.String() != userID {
 			newGroupUsers = append(newGroupUsers, ug)
 		}
 	}
@@ -163,7 +163,7 @@ func (r *InMemoryRepository) RemoveUserFromGroup(userID, groupID string) error {
 	// Remove from userGroups
 	newUserGroups := make([]*UserGroup, 0)
 	for _, ug := range r.userGroups[userID] {
-		if ug.GroupID != groupID {
+		if ug.GroupID.String() != groupID {
 			newUserGroups = append(newUserGroups, ug)
 		}
 	}
@@ -202,7 +202,7 @@ func (r *InMemoryRepository) IsUserInGroup(userID, groupID string) bool {
 // isUserInGroup checks if a user is in a group (internal, no lock)
 func (r *InMemoryRepository) isUserInGroup(userID, groupID string) bool {
 	for _, ug := range r.userGroups[userID] {
-		if ug.GroupID == groupID {
+		if ug.GroupID.String() == groupID {
 			return true
 		}
 	}
@@ -222,7 +222,7 @@ func (r *InMemoryRepository) GetUserRole(userID, groupID string) (string, error)
 	defer r.mu.RUnlock()
 
 	for _, ug := range r.userGroups[userID] {
-		if ug.GroupID == groupID {
+		if ug.GroupID.String() == groupID {
 			return ug.Role, nil
 		}
 	}

@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -136,4 +139,94 @@ func (db *DB) AutoMigrate(models ...interface{}) error {
 	}
 	log.Println("✅ Database migrations completed")
 	return nil
+}
+
+// ApplySQLMigrations applies tracked SQL migration files from the given directory.
+func (db *DB) ApplySQLMigrations(migrationsDir string) error {
+	if err := db.Gorm.Exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
+		filename text PRIMARY KEY,
+		applied_at timestamptz NOT NULL DEFAULT now()
+	)`).Error; err != nil {
+		return fmt.Errorf("failed to ensure schema_migrations table: %w", err)
+	}
+
+	var appliedFiles []string
+	if err := db.Gorm.Raw(`SELECT filename FROM schema_migrations ORDER BY filename`).Scan(&appliedFiles).Error; err != nil {
+		return fmt.Errorf("failed to load applied migrations: %w", err)
+	}
+	applied := make(map[string]struct{}, len(appliedFiles))
+	for _, filename := range appliedFiles {
+		applied[filename] = struct{}{}
+	}
+
+	entries, err := os.ReadDir(migrationsDir)
+	if os.IsNotExist(err) {
+		migrationsDir = "apps/api/migrations"
+		entries, err = os.ReadDir(migrationsDir)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to list migrations directory %s: %w", migrationsDir, err)
+	}
+
+	var names []string
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".sql") {
+			names = append(names, entry.Name())
+		}
+	}
+	sort.Strings(names)
+
+	for _, name := range names {
+		if _, ok := applied[name]; ok {
+			continue
+		}
+
+		path := filepath.Join(migrationsDir, name)
+		content, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return fmt.Errorf("failed to read migration %s: %w", path, readErr)
+		}
+
+		sqlText := string(content)
+		if idx := strings.Index(strings.ToUpper(sqlText), "-- DOWN"); idx >= 0 {
+			sqlText = sqlText[:idx]
+		}
+		sqlText = strings.TrimSpace(sqlText)
+		if sqlText == "" {
+			continue
+		}
+
+		if err := db.Gorm.Transaction(func(tx *gorm.DB) error {
+			if err := executeSQLStatements(tx, sqlText); err != nil {
+				return err
+			}
+			return tx.Exec(`INSERT INTO schema_migrations (filename) VALUES (?)`, name).Error
+		}); err != nil {
+			return fmt.Errorf("failed to apply migration %s: %w", path, err)
+		}
+
+		log.Printf("✅ Applied SQL migration: %s", name)
+	}
+
+	return nil
+}
+
+func executeSQLStatements(tx *gorm.DB, sqlText string) error {
+	for _, statement := range strings.Split(sqlText, ";") {
+		statement = strings.TrimSpace(statement)
+		if statement == "" {
+			continue
+		}
+		if err := tx.Exec(statement).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// RunSQLMigrations executes tracked SQL migration files (UP section only).
+func (db *DB) RunSQLMigrations() {
+	if err := db.ApplySQLMigrations("migrations"); err != nil {
+		log.Printf("⚠️  Failed to run SQL migrations: %v", err)
+	}
 }

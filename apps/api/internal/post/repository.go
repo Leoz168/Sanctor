@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -23,8 +24,8 @@ func NewRepository(db *gorm.DB) *Repository {
 }
 
 // CreateWithLinks adds a new post and ignores relation links in memory mode
-func (r *Repository) CreateWithLinks(post *Post, groupIDs []string, institutionIDs []string) (*Post, error) {
-	r.posts[post.ID] = post
+func (r *Repository) CreateWithLinks(post *Post, groupIDs []uuid.UUID, institutionIDs []uuid.UUID) (*Post, error) {
+	r.posts[post.ID.String()] = post
 	return post, nil
 }
 
@@ -141,7 +142,7 @@ func (r *Repository) Search(filters PostSearchFilters) ([]*Post, error) {
 
 // Update updates a post
 func (r *Repository) Update(post *Post) error {
-	r.posts[post.ID] = post
+	r.posts[post.ID.String()] = post
 	return nil
 }
 

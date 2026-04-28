@@ -94,6 +94,7 @@ Each module follows the **layered architecture**:
 ### Docker (recommended)
 ```bash
 docker compose up --build
+docker compose -f docker-compose.dev.yml up --build backend
 ```
 
 ### Local

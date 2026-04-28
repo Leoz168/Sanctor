@@ -19,7 +19,7 @@ func (r *InMemoryRepository) Create(user *User) error {
 	if user == nil {
 		return errors.New("user cannot be nil")
 	}
-	r.users[user.ID] = user
+	r.users[user.ID.String()] = user
 	return nil
 }
 
@@ -46,10 +46,10 @@ func (r *InMemoryRepository) Update(user *User) error {
 	if user == nil {
 		return errors.New("user cannot be nil")
 	}
-	if _, exists := r.users[user.ID]; !exists {
+	if _, exists := r.users[user.ID.String()]; !exists {
 		return errors.New("user not found")
 	}
-	r.users[user.ID] = user
+	r.users[user.ID.String()] = user
 	return nil
 }
 
