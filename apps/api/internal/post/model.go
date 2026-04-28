@@ -30,15 +30,15 @@ type Post struct {
 	CreatedByUserID uuid.UUID          `json:"created_by_user_id" gorm:"column:created_by;type:uuid;index"` // uuid
 }
 
-// PostCommunity represents the many-to-many relationship between posts and groups
+// PostCommunity represents the many-to-many relationship between posts and communities
 type PostCommunity struct {
 	PostID      uuid.UUID `json:"postId" gorm:"type:uuid;primaryKey"`
-	CommunityID uuid.UUID `json:"communityId" gorm:"column:group_id;type:uuid;primaryKey"`
+	CommunityID uuid.UUID `json:"communityId" gorm:"column:community_id;type:uuid;primaryKey"`
 	LinkedAt    time.Time `json:"linkedAt" gorm:"autoCreateTime"`
 }
 
 func (PostCommunity) TableName() string {
-	return "post_groups"
+	return "post_communities"
 }
 
 // PostInstitution represents the many-to-many relationship between posts and institutions
