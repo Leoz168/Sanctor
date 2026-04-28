@@ -18,33 +18,33 @@ type Community struct {
 }
 
 func (Community) TableName() string {
-	return "groups"
+	return "communities"
 }
 
-// UserCommunity represents the many-to-many relationship between users and groups
+// UserCommunity represents the many-to-many relationship between users and communities
 type UserCommunity struct {
 	UserID      uuid.UUID `json:"userId" gorm:"type:uuid;primaryKey"`
-	CommunityID uuid.UUID `json:"communityId" gorm:"column:group_id;type:uuid;primaryKey"`
+	CommunityID uuid.UUID `json:"communityId" gorm:"column:community_id;type:uuid;primaryKey"`
 	Role        string    `json:"role" gorm:"type:varchar(20);default:'member'"` // "member", "admin", "owner"
 	JoinedAt    time.Time `json:"joinedAt" gorm:"autoCreateTime"`
 }
 
 func (UserCommunity) TableName() string {
-	return "user_groups"
+	return "user_communities"
 }
 
-// CommunityInstitution represents the many-to-many relationship between groups and institutions
+// CommunityInstitution represents the many-to-many relationship between communities and institutions
 type CommunityInstitution struct {
-	CommunityID   uuid.UUID `json:"communityId" gorm:"column:group_id;type:uuid;primaryKey"`
+	CommunityID   uuid.UUID `json:"communityId" gorm:"column:community_id;type:uuid;primaryKey"`
 	InstitutionID uuid.UUID `json:"institutionId" gorm:"type:uuid;primaryKey"`
 	LinkedAt      time.Time `json:"linkedAt" gorm:"autoCreateTime"`
 }
 
 func (CommunityInstitution) TableName() string {
-	return "group_institutions"
+	return "community_institutions"
 }
 
-// CreateCommunityRequest represents the data needed to create a new group
+// CreateCommunityRequest represents the data needed to create a new community
 type CreateCommunityRequest struct {
 	Name          string `json:"name"`
 	Description   string `json:"description,omitempty"`
@@ -60,20 +60,20 @@ type UpdateCommunityRequest struct {
 	IsPrivate   *bool  `json:"isPrivate,omitempty"`
 }
 
-// AddUserToCommunityRequest represents adding a user to a group
+// AddUserToCommunityRequest represents adding a user to a community
 type AddUserToCommunityRequest struct {
 	UserID      string `json:"userId"`
 	CommunityID string `json:"communityId"`
 	Role        string `json:"role,omitempty"` // defaults to "member"
 }
 
-// CommunityWithMembers includes group data and member count
+// CommunityWithMembers includes community data and member count
 type CommunityWithMembers struct {
 	*Community
 	MemberCount int `json:"memberCount"`
 }
 
-// UserCommunityInfo includes user info in a group context
+// UserCommunityInfo includes user info in a community context
 type UserCommunityInfo struct {
 	UserID   uuid.UUID `json:"userId"`
 	Role     string    `json:"role"`
