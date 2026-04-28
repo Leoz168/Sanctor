@@ -106,7 +106,7 @@ func (s *Service) CreatePost(req *CreatePostRequest) (*Post, error) {
 	post.CreatedAt = time.Now()
 	post.UpdatedAt = time.Now()
 
-	groupIDs, err := parseUUIDs(uniqueIDs(req.GroupIDs))
+	groupIDs, err := parseUUIDs(uniqueIDs(req.CommunityIDs))
 	if err != nil {
 		return nil, err
 	}

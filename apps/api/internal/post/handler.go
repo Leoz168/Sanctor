@@ -66,10 +66,15 @@ func (h *Handler) SearchPosts(w http.ResponseWriter, r *http.Request) {
 
 func parsePostSearchFilters(r *http.Request) (PostSearchFilters, error) {
 	q := r.URL.Query()
+	communityID := strings.TrimSpace(q.Get("communityId"))
+	if communityID == "" {
+		communityID = strings.TrimSpace(q.Get("groupId"))
+	}
+
 	filters := PostSearchFilters{
 		Query:         strings.TrimSpace(q.Get("q")),
 		PropertyType:  strings.TrimSpace(q.Get("propertyType")),
-		GroupID:       strings.TrimSpace(q.Get("groupId")),
+		CommunityID:   communityID,
 		InstitutionID: strings.TrimSpace(q.Get("institutionId")),
 		SortBy:        strings.TrimSpace(q.Get("sortBy")),
 		SortOrder:     strings.TrimSpace(q.Get("sortOrder")),
