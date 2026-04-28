@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"sanctor/internal/auth"
 	redisclient "sanctor/internal/redis"
 	"strconv"
 	"strings"
@@ -52,21 +53,29 @@ func CORS(next http.Handler) http.Handler {
 // Authenticate is a middleware that validates JWT tokens
 func Authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
+		token := strings.TrimSpace(r.Header.Get("Authorization"))
+		if token == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		if strings.HasPrefix(strings.ToLower(token), "bearer ") {
+			token = strings.TrimSpace(token[len("bearer "):])
+		}
 		if token == "" {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
 		// Validate the token
-		claims, err := ValidateJWT(token)
+		userID, err := auth.ValidateJWT(token)
 		if err != nil {
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
 			return
 		}
 
-		// Add user role to context
-		r = r.WithContext(context.WithValue(r.Context(), "userRole", claims.Role))
+		// Add user ID to context for downstream handlers
+		r = r.WithContext(context.WithValue(r.Context(), "userId", userID))
 		next.ServeHTTP(w, r)
 	})
 }
@@ -257,15 +266,4 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
-}
-
-// ValidateJWT validates a JWT token and returns the claims
-func ValidateJWT(token string) (Claims, error) {
-	// TODO: Implement JWT validation logic
-	return Claims{}, nil
-}
-
-// Claims represents the JWT claims
-type Claims struct {
-	Role string `json:"role"`
 }
