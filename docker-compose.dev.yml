@@ -135,6 +135,7 @@ services:
     restart: unless-stopped
     command: ["sh", "-c", "npm install && npm run dev -- --host"]
 
+
 networks:
   sanctor-network:
     driver: bridge

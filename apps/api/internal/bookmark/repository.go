@@ -20,7 +20,7 @@ func (r *InMemoryRepository) Create(bookmark *Bookmark) error {
 	if bookmark == nil {
 		return errors.New("bookmark cannot be nil")
 	}
-	key := bookmarkKey(bookmark.UserID, bookmark.PostID)
+	key := bookmarkKey(bookmark.UserID.String(), bookmark.PostID.String())
 	if _, exists := r.bookmarks[key]; exists {
 		return errors.New("post is already bookmarked")
 	}
@@ -37,7 +37,7 @@ func (r *InMemoryRepository) Delete(userID, postID string) error {
 func (r *InMemoryRepository) FindByUserID(userID string) ([]*Bookmark, error) {
 	bookmarks := make([]*Bookmark, 0)
 	for _, bookmark := range r.bookmarks {
-		if bookmark.UserID == userID {
+		if bookmark.UserID.String() == userID {
 			bookmarks = append(bookmarks, bookmark)
 		}
 	}

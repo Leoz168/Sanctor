@@ -20,7 +20,7 @@ func (r *InMemoryRepository) Create(comment *Comment) error {
 	if comment == nil {
 		return errors.New("comment cannot be nil")
 	}
-	r.comments[comment.ID] = comment
+	r.comments[comment.ID.String()] = comment
 	return nil
 }
 
@@ -35,7 +35,7 @@ func (r *InMemoryRepository) FindByID(id string) (*Comment, error) {
 func (r *InMemoryRepository) FindByPostID(postID string) []*Comment {
 	result := make([]*Comment, 0)
 	for _, comment := range r.comments {
-		if comment.PostID == postID && comment.DeletedAt == nil {
+		if comment.PostID.String() == postID && comment.DeletedAt == nil {
 			result = append(result, comment)
 		}
 	}
@@ -51,11 +51,11 @@ func (r *InMemoryRepository) Update(comment *Comment) error {
 	if comment == nil {
 		return errors.New("comment cannot be nil")
 	}
-	existing, exists := r.comments[comment.ID]
+	existing, exists := r.comments[comment.ID.String()]
 	if !exists || existing.DeletedAt != nil {
 		return errors.New("comment not found")
 	}
-	r.comments[comment.ID] = comment
+	r.comments[comment.ID.String()] = comment
 	return nil
 }
 

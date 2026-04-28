@@ -15,7 +15,7 @@ type PostRepository interface {
 	FindByID(id string) (*Post, error)
 	FindAll() ([]*Post, error)
 	Search(filters PostSearchFilters) ([]*Post, error)
-	CreateWithLinks(post *Post, groupIDs []string, institutionIDs []string) (*Post, error)
+	CreateWithLinks(post *Post, groupIDs []uuid.UUID, institutionIDs []uuid.UUID) (*Post, error)
 	Update(post *Post) error
 	Delete(id string) error
 }
@@ -56,11 +56,19 @@ func validatePostInput(post *Post) error {
 
 // CreatePost creates a new post
 func (s *Service) CreatePost(req *CreatePostRequest) (*Post, error) {
+	if req.UserID == "" {
+		return nil, errors.New("userId is required")
+	}
+	userUUID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		return nil, errors.New("invalid userId format")
+	}
+
 	post := &Post{
-		ID:              uuid.New().String(),
-		UserID:          req.UserID,
-		CreatedByUserID: req.UserID,
-		UpdatedByUserID: req.UserID,
+		ID:              uuid.New(),
+		UserID:          userUUID,
+		CreatedByUserID: userUUID,
+		UpdatedByUserID: userUUID,
 	}
 
 	if req.Address != nil {
@@ -98,10 +106,31 @@ func (s *Service) CreatePost(req *CreatePostRequest) (*Post, error) {
 	post.CreatedAt = time.Now()
 	post.UpdatedAt = time.Now()
 
-	groupIDs := uniqueIDs(req.GroupIDs)
-	institutionIDs := uniqueIDs(req.InstitutionIDs)
+	groupIDs, err := parseUUIDs(uniqueIDs(req.GroupIDs))
+	if err != nil {
+		return nil, err
+	}
+	institutionIDs, err := parseUUIDs(uniqueIDs(req.InstitutionIDs))
+	if err != nil {
+		return nil, err
+	}
 
 	return s.repo.CreateWithLinks(post, groupIDs, institutionIDs)
+}
+
+func parseUUIDs(ids []string) ([]uuid.UUID, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	parsed := make([]uuid.UUID, 0, len(ids))
+	for _, id := range ids {
+		value, err := uuid.Parse(id)
+		if err != nil {
+			return nil, errors.New("invalid UUID in list")
+		}
+		parsed = append(parsed, value)
+	}
+	return parsed, nil
 }
 
 func uniqueIDs(ids []string) []string {
@@ -180,7 +209,7 @@ func (s *Service) UpdatePost(id string, req UpdatePostRequest, userID string, us
 	}
 
 	// Check if the user is allowed to update the post
-	if userRole != "admin" && post.CreatedByUserID != userID {
+	if userRole != "admin" && post.CreatedByUserID.String() != userID {
 		return nil, errors.New("you are not allowed to update this post")
 	}
 
@@ -217,7 +246,14 @@ func (s *Service) UpdatePost(id string, req UpdatePostRequest, userID string, us
 	}
 
 	// Update metadata fields
-	post.UpdatedByUserID = userID
+	if userID == "" {
+		return nil, errors.New("user ID is required")
+	}
+	updaterUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, errors.New("invalid user ID format")
+	}
+	post.UpdatedByUserID = updaterUUID
 	post.UpdatedAt = time.Now()
 
 	// Validate required fields

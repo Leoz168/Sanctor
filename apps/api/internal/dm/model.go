@@ -1,23 +1,27 @@
 package dm
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type DMGroup struct {
-	ID        string    `json:"id" gorm:"type:uuid;primaryKey"`
+	ID        uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
 	CreatedAt time.Time `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
 type DMGroupUser struct {
-	GroupID  string    `json:"groupId" gorm:"type:uuid;primaryKey;index"`
-	UserID   string    `json:"userId" gorm:"type:uuid;primaryKey;index"`
+	GroupID  uuid.UUID `json:"groupId" gorm:"type:uuid;primaryKey;index"`
+	UserID   uuid.UUID `json:"userId" gorm:"type:uuid;primaryKey;index"`
 	JoinedAt time.Time `json:"joinedAt" gorm:"autoCreateTime"`
 }
 
 type DMMessage struct {
-	ID          string    `json:"id" gorm:"type:uuid;primaryKey"`
-	GroupID     string    `json:"groupId" gorm:"type:uuid;index;not null"`
-	UserID      string    `json:"userId" gorm:"type:uuid;index;not null"`
+	ID          uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	GroupID     uuid.UUID `json:"groupId" gorm:"type:uuid;index;not null"`
+	UserID      uuid.UUID `json:"userId" gorm:"type:uuid;index;not null"`
 	Content     string    `json:"content" gorm:"type:text;not null"`
 	MessageTime time.Time `json:"messageTime" gorm:"index;not null"`
 	CreatedAt   time.Time `json:"createdAt" gorm:"autoCreateTime"`

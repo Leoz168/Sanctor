@@ -22,7 +22,7 @@ func NewRepository() Repository {
 func (r *InMemoryRepository) CreateGroup(group *DMGroup) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.groups[group.ID] = group
+	r.groups[group.ID.String()] = group
 	return nil
 }
 
@@ -30,18 +30,21 @@ func (r *InMemoryRepository) AddUserToGroup(groupUser *DMGroupUser) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if _, ok := r.groups[groupUser.GroupID]; !ok {
+	groupID := groupUser.GroupID.String()
+	userID := groupUser.UserID.String()
+
+	if _, ok := r.groups[groupID]; !ok {
 		return ErrDMGroupNotFound
 	}
 
-	for _, existing := range r.groupUsers[groupUser.GroupID] {
+	for _, existing := range r.groupUsers[groupID] {
 		if existing.UserID == groupUser.UserID {
 			return nil
 		}
 	}
 
-	r.groupUsers[groupUser.GroupID] = append(r.groupUsers[groupUser.GroupID], groupUser)
-	r.userGroups[groupUser.UserID] = append(r.userGroups[groupUser.UserID], groupUser.GroupID)
+	r.groupUsers[groupID] = append(r.groupUsers[groupID], groupUser)
+	r.userGroups[userID] = append(r.userGroups[userID], groupID)
 	return nil
 }
 
@@ -86,10 +89,10 @@ func (r *InMemoryRepository) FindDirectGroupByUsers(userA, userB string) (*DMGro
 		foundA := false
 		foundB := false
 		for _, member := range users {
-			if member.UserID == userA {
+			if member.UserID.String() == userA {
 				foundA = true
 			}
-			if member.UserID == userB {
+			if member.UserID.String() == userB {
 				foundB = true
 			}
 		}
@@ -109,7 +112,7 @@ func (r *InMemoryRepository) IsUserInGroup(userID, groupID string) bool {
 	defer r.mu.RUnlock()
 
 	for _, member := range r.groupUsers[groupID] {
-		if member.UserID == userID {
+		if member.UserID.String() == userID {
 			return true
 		}
 	}
@@ -121,11 +124,13 @@ func (r *InMemoryRepository) SaveMessage(message *DMMessage) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if _, ok := r.groups[message.GroupID]; !ok {
+	groupID := message.GroupID.String()
+
+	if _, ok := r.groups[groupID]; !ok {
 		return ErrDMGroupNotFound
 	}
 
-	r.groupMessage[message.GroupID] = append(r.groupMessage[message.GroupID], message)
+	r.groupMessage[groupID] = append(r.groupMessage[groupID], message)
 	return nil
 }
 

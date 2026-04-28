@@ -113,7 +113,7 @@ func (m *Messaging) NotifyUserLeft(groupID, userID string) {
 func (m *Messaging) NotifyGroupUpdated(group *Group) {
 	event := &GroupEvent{
 		Type:    "group_updated",
-		GroupID: group.ID,
+		GroupID: group.ID.String(),
 		Data:    group,
 	}
 	m.PublishEvent(event)

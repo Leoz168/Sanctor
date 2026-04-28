@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	"sanctor/internal/database"
+
+	"github.com/google/uuid"
 )
 
 // PostgresRepository implements Repository interface for PostgreSQL
@@ -43,6 +45,10 @@ func (r *PostgresRepository) Create(user *User) error {
 
 // FindByID retrieves a user by ID
 func (r *PostgresRepository) FindByID(id string) (*User, error) {
+	userUUID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, errors.New("invalid user ID format")
+	}
 	user := &User{}
 	query := `
 		SELECT id, email, username, first_name, last_name, password_hash,
@@ -51,7 +57,7 @@ func (r *PostgresRepository) FindByID(id string) (*User, error) {
 		FROM users WHERE id = $1
 	`
 
-	err := r.db.QueryRow(query, id).Scan(
+	err = r.db.QueryRow(query, userUUID).Scan(
 		&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
 		&user.PasswordHash, &user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
 		&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
@@ -139,9 +145,13 @@ func (r *PostgresRepository) Update(user *User) error {
 
 // Delete removes a user from the database
 func (r *PostgresRepository) Delete(id string) error {
+	userUUID, err := uuid.Parse(id)
+	if err != nil {
+		return errors.New("invalid user ID format")
+	}
 	query := `DELETE FROM users WHERE id = $1`
 
-	result, err := r.db.Exec(query, id)
+	result, err := r.db.Exec(query, userUUID)
 	if err != nil {
 		return err
 	}

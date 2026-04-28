@@ -32,13 +32,22 @@ func (s *Service) CreateGroup(req CreateGroupRequest) (*Group, error) {
 		return nil, errors.New("institution ID is required")
 	}
 
+	creatorUUID, err := uuid.Parse(req.CreatedBy)
+	if err != nil {
+		return nil, errors.New("invalid creator user ID format")
+	}
+	institutionUUID, err := uuid.Parse(req.InstitutionID)
+	if err != nil {
+		return nil, errors.New("invalid institution ID format")
+	}
+
 	// Create group
 	group := &Group{
-		ID:          uuid.New().String(),
+		ID:          uuid.New(),
 		Name:        req.Name,
 		Description: req.Description,
 		IsPrivate:   req.IsPrivate,
-		CreatedBy:   req.CreatedBy,
+		CreatedBy:   creatorUUID,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
@@ -49,7 +58,7 @@ func (s *Service) CreateGroup(req CreateGroupRequest) (*Group, error) {
 
 	// Automatically add creator as owner
 	userGroup := &UserGroup{
-		UserID:   req.CreatedBy,
+		UserID:   creatorUUID,
 		GroupID:  group.ID,
 		Role:     "owner",
 		JoinedAt: time.Now(),
@@ -57,19 +66,19 @@ func (s *Service) CreateGroup(req CreateGroupRequest) (*Group, error) {
 
 	if err := s.repo.AddUserToGroup(userGroup); err != nil {
 		// Rollback: delete the group if adding creator fails
-		s.repo.Delete(group.ID)
+		s.repo.Delete(group.ID.String())
 		return nil, errors.New("failed to add creator to group")
 	}
 
 	groupInstitution := &GroupInstitution{
 		GroupID:       group.ID,
-		InstitutionID: req.InstitutionID,
+		InstitutionID: institutionUUID,
 		LinkedAt:      time.Now(),
 	}
 
 	if err := s.repo.AddGroupToInstitution(groupInstitution); err != nil {
 		// Rollback: delete the group and owner membership if institution linking fails
-		s.repo.Delete(group.ID)
+		s.repo.Delete(group.ID.String())
 		return nil, errors.New("failed to link group to institution")
 	}
 
@@ -146,6 +155,15 @@ func (s *Service) AddUserToGroup(req AddUserToGroupRequest) error {
 		return errors.New("user ID and group ID are required")
 	}
 
+	userUUID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		return errors.New("invalid user ID format")
+	}
+	groupUUID, err := uuid.Parse(req.GroupID)
+	if err != nil {
+		return errors.New("invalid group ID format")
+	}
+
 	// Validate group exists
 	if _, err := s.repo.FindByID(req.GroupID); err != nil {
 		return errors.New("group not found")
@@ -163,8 +181,8 @@ func (s *Service) AddUserToGroup(req AddUserToGroupRequest) error {
 	}
 
 	userGroup := &UserGroup{
-		UserID:   req.UserID,
-		GroupID:  req.GroupID,
+		UserID:   userUUID,
+		GroupID:  groupUUID,
 		Role:     role,
 		JoinedAt: time.Now(),
 	}

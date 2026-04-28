@@ -26,13 +26,15 @@ func (s *Service) CreateBookmark(req CreateBookmarkRequest) (*Bookmark, error) {
 	if userID == "" {
 		return nil, errors.New("user ID is required")
 	}
-	if _, err := uuid.Parse(userID); err != nil {
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
 		return nil, errors.New("invalid user ID format")
 	}
 	if postID == "" {
 		return nil, errors.New("post ID is required")
 	}
-	if _, err := uuid.Parse(postID); err != nil {
+	postUUID, err := uuid.Parse(postID)
+	if err != nil {
 		return nil, errors.New("invalid post ID format")
 	}
 	if !s.repo.ExistsUser(userID) {
@@ -51,8 +53,8 @@ func (s *Service) CreateBookmark(req CreateBookmarkRequest) (*Bookmark, error) {
 	}
 
 	bookmark := &Bookmark{
-		UserID:    userID,
-		PostID:    postID,
+		UserID:    userUUID,
+		PostID:    postUUID,
 		CreatedAt: time.Now(),
 	}
 

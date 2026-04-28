@@ -3,6 +3,7 @@ package bookmark
 import (
 	"sanctor/internal/database"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm/clause"
 )
 
@@ -22,22 +23,38 @@ func (r *PostgresRepository) Create(bookmark *Bookmark) error {
 }
 
 func (r *PostgresRepository) Delete(userID, postID string) error {
-	return r.db.Gorm.Where("user_id = ? AND post_id = ?", userID, postID).Delete(&Bookmark{}).Error
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return err
+	}
+	postUUID, err := uuid.Parse(postID)
+	if err != nil {
+		return err
+	}
+	return r.db.Gorm.Where("user_id = ? AND post_id = ?", userUUID, postUUID).Delete(&Bookmark{}).Error
 }
 
 func (r *PostgresRepository) FindByUserID(userID string) ([]*Bookmark, error) {
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, err
+	}
 	bookmarks := make([]*Bookmark, 0)
-	err := r.db.Gorm.Where("user_id = ?", userID).Order("created_at DESC").Find(&bookmarks).Error
+	err = r.db.Gorm.Where("user_id = ?", userUUID).Order("created_at DESC").Find(&bookmarks).Error
 	return bookmarks, err
 }
 
 func (r *PostgresRepository) FindPostsByUserID(userID string) ([]*BookmarkedPost, error) {
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, err
+	}
 	posts := make([]*BookmarkedPost, 0)
-	err := r.db.Gorm.
+	err = r.db.Gorm.
 		Table("posts").
 		Select("posts.*").
 		Joins("JOIN post_bookmarks ON post_bookmarks.post_id = posts.id").
-		Where("post_bookmarks.user_id = ?", userID).
+		Where("post_bookmarks.user_id = ?", userUUID).
 		Order("post_bookmarks.created_at DESC").
 		Find(&posts).Error
 
@@ -45,8 +62,16 @@ func (r *PostgresRepository) FindPostsByUserID(userID string) ([]*BookmarkedPost
 }
 
 func (r *PostgresRepository) Exists(userID, postID string) (bool, error) {
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return false, err
+	}
+	postUUID, err := uuid.Parse(postID)
+	if err != nil {
+		return false, err
+	}
 	var count int64
-	err := r.db.Gorm.Model(&Bookmark{}).Where("user_id = ? AND post_id = ?", userID, postID).Count(&count).Error
+	err = r.db.Gorm.Model(&Bookmark{}).Where("user_id = ? AND post_id = ?", userUUID, postUUID).Count(&count).Error
 	if err != nil {
 		return false, err
 	}
@@ -54,14 +79,22 @@ func (r *PostgresRepository) Exists(userID, postID string) (bool, error) {
 }
 
 func (r *PostgresRepository) ExistsPost(postID string) bool {
+	postUUID, err := uuid.Parse(postID)
+	if err != nil {
+		return false
+	}
 	var count int64
-	err := r.db.Gorm.Table("posts").Where("id = ?", postID).Count(&count).Error
+	err = r.db.Gorm.Table("posts").Where("id = ?", postUUID).Count(&count).Error
 	return err == nil && count > 0
 }
 
 func (r *PostgresRepository) ExistsUser(userID string) bool {
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return false
+	}
 	var count int64
-	err := r.db.Gorm.Table("users").Where("id = ?", userID).Count(&count).Error
+	err = r.db.Gorm.Table("users").Where("id = ?", userUUID).Count(&count).Error
 	return err == nil && count > 0
 }
 

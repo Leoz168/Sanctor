@@ -3,13 +3,14 @@ package bookmark
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"sanctor/internal/post"
 )
 
 // Bookmark represents a user's saved post.
 type Bookmark struct {
-	UserID    string    `json:"userId" gorm:"type:uuid;primaryKey;not null;index:idx_post_bookmarks_user_id"`
-	PostID    string    `json:"postId" gorm:"type:uuid;primaryKey;not null;index:idx_post_bookmarks_post_id"`
+	UserID    uuid.UUID `json:"userId" gorm:"type:uuid;primaryKey;not null;index:idx_post_bookmarks_user_id"`
+	PostID    uuid.UUID `json:"postId" gorm:"type:uuid;primaryKey;not null;index:idx_post_bookmarks_post_id"`
 	CreatedAt time.Time `json:"createdAt" gorm:"autoCreateTime"`
 }
 

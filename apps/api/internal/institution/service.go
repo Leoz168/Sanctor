@@ -27,7 +27,7 @@ func (s *Service) CreateInstitution(req CreateInstitutionRequest) (*Institution,
 	}
 
 	institution := &Institution{
-		ID:      uuid.New().String(),
+		ID:      uuid.New(),
 		Name:    name,
 		Country: strings.TrimSpace(req.Country),
 		Region:  strings.TrimSpace(req.Region),

@@ -1,14 +1,16 @@
 package post
 
 import (
-	sharedtypes "sanctor/pkg/types"
 	"time"
+
+	"github.com/google/uuid"
+	sharedtypes "sanctor/pkg/types"
 )
 
 // Model represents a post in the system
 type Post struct {
-	ID              string             `json:"id"`                                          // uuid
-	UserID          string             `json:"user_id"`                                     // uuid
+	ID              uuid.UUID          `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"` // uuid
+	UserID          uuid.UUID          `json:"user_id" gorm:"type:uuid;index:idx_posts_user_id"`          // uuid
 	Address         string             `json:"address" gorm:"index:idx_posts_address"`      // varchar
 	IsSublet        bool               `json:"is_sublet"`                                   // bool
 	Price           int64              `json:"price" gorm:"index:idx_posts_price"`          // int8
@@ -23,21 +25,21 @@ type Post struct {
 	Content         string             `json:"content"`                                     // text
 	CreatedAt       time.Time          `json:"created_at"`                                  // timestamptz
 	UpdatedAt       time.Time          `json:"updated_at"`                                  // timestamptz
-	UpdatedByUserID string             `json:"updated_by_user_id" gorm:"column:updated_by"` // uuid
-	CreatedByUserID string             `json:"created_by_user_id" gorm:"column:created_by"` // uuid
+	UpdatedByUserID uuid.UUID          `json:"updated_by_user_id" gorm:"column:updated_by;type:uuid;index"` // uuid
+	CreatedByUserID uuid.UUID          `json:"created_by_user_id" gorm:"column:created_by;type:uuid;index"` // uuid
 }
 
 // PostGroup represents the many-to-many relationship between posts and groups
 type PostGroup struct {
-	PostID   string    `json:"postId" gorm:"type:uuid;primaryKey"`
-	GroupID  string    `json:"groupId" gorm:"type:uuid;primaryKey"`
+	PostID   uuid.UUID `json:"postId" gorm:"type:uuid;primaryKey"`
+	GroupID  uuid.UUID `json:"groupId" gorm:"type:uuid;primaryKey"`
 	LinkedAt time.Time `json:"linkedAt" gorm:"autoCreateTime"`
 }
 
 // PostInstitution represents the many-to-many relationship between posts and institutions
 type PostInstitution struct {
-	PostID        string    `json:"postId" gorm:"type:uuid;primaryKey"`
-	InstitutionID string    `json:"institutionId" gorm:"type:uuid;primaryKey"`
+	PostID        uuid.UUID `json:"postId" gorm:"type:uuid;primaryKey"`
+	InstitutionID uuid.UUID `json:"institutionId" gorm:"type:uuid;primaryKey"`
 	LinkedAt      time.Time `json:"linkedAt" gorm:"autoCreateTime"`
 }
 

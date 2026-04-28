@@ -81,7 +81,7 @@ func (s *Service) Login(req LoginRequest) (*AuthResponse, error) {
 		return nil, errors.New("invalid password")
 	}
 	// Generate JWT
-	token, err := GenerateJWT(u.ID)
+	token, err := GenerateJWT(u.ID.String())
 	if err != nil {
 		return nil, errors.New("failed to generate token")
 	}
@@ -111,7 +111,7 @@ func (s *Service) Register(req RegisterRequest) (*AuthResponse, error) {
 		return nil, err
 	}
 	// Generate JWT
-	token, err := GenerateJWT(u.ID)
+	token, err := GenerateJWT(u.ID.String())
 	if err != nil {
 		return nil, errors.New("failed to generate token")
 	}
