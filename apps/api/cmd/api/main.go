@@ -112,6 +112,29 @@ func main() {
 		}
 	}
 
+	// Initialize shared user service
+	var userRepo user.Repository
+	if db != nil {
+		userRepo = user.NewPostgresRepository(db)
+	} else {
+		userRepo = user.NewRepository()
+	}
+	userService := user.NewService(userRepo)
+
+	authRepo := auth.NewRepository()
+	authService := auth.NewService(authRepo, userService)
+	authHandler := auth.NewHandler(authService)
+
+	// Post endpoints - use database if available
+	var postService *post.Service
+	if db != nil {
+		postRepo := post.NewGormRepository(db)
+		postService = post.NewService(postRepo)
+		log.Println("✅ Posts initialized with database")
+	} else {
+		log.Fatal("⚠️  In-memory storage is no longer supported for posts")
+	}
+
 	// Health check endpoints
 	http.HandleFunc("/health", healthHandler)
 	http.HandleFunc("/api/health", healthHandler)
@@ -153,15 +176,6 @@ func main() {
 	http.HandleFunc("/api/institutions/update", authRequired(institution.UpdateInstitution))
 	http.HandleFunc("/api/institutions/delete", authRequired(institution.DeleteInstitution))
 
-	// Post endpoints - use database if available
-	var postService *post.Service
-	if db != nil {
-		postRepo := post.NewGormRepository(db)
-		postService = post.NewService(postRepo)
-		log.Println("✅ Posts initialized with database")
-	} else {
-		log.Fatal("⚠️  In-memory storage is no longer supported for posts")
-	}
 	postHandler := post.NewHandler(postService)
 	http.HandleFunc("/api/posts", postHandler.GetPosts)
 	http.HandleFunc("/api/posts/search", postHandler.SearchPosts)
@@ -182,19 +196,7 @@ func main() {
 	http.HandleFunc("/api/comments/update", authRequired(comment.UpdateComment))
 	http.HandleFunc("/api/comments/delete", authRequired(comment.DeleteComment))
 
-	// Initialize shared user service
-	var userRepo user.Repository
-	if db != nil {
-		userRepo = user.NewPostgresRepository(db)
-	} else {
-		userRepo = user.NewRepository()
-	}
-	userService := user.NewService(userRepo)
-
 	// Auth endpoints
-	authRepo := auth.NewRepository()
-	authService := auth.NewService(authRepo, userService)
-	authHandler := auth.NewHandler(authService)
 	http.HandleFunc("/api/auth/register", authHandler.Register)
 	http.HandleFunc("/api/auth/login", authHandler.Login)
 	port := os.Getenv("PORT")
