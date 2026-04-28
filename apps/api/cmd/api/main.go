@@ -13,8 +13,8 @@ import (
 	"sanctor/internal/community"
 	"sanctor/internal/config"
 	"sanctor/internal/database"
-
 	"sanctor/internal/dm"
+	"sanctor/internal/institution"
 	"sanctor/internal/middleware"
 	"sanctor/internal/picture"
 	"sanctor/internal/post"
