@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"sanctor/internal/database"
+
+	"github.com/google/uuid"
 )
 
 // Initialize repository and service (defaults to in-memory)
@@ -54,7 +56,12 @@ func GetInstitution(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	institution, err := service.GetInstitution(id)
+	institutionID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid institution ID format", http.StatusBadRequest)
+		return
+	}
+	institution, err := service.GetInstitution(institutionID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -121,7 +128,12 @@ func UpdateInstitution(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	institution, err := service.UpdateInstitution(id, req)
+	institutionID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid institution ID format", http.StatusBadRequest)
+		return
+	}
+	institution, err := service.UpdateInstitution(institutionID, req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -149,7 +161,12 @@ func DeleteInstitution(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := service.DeleteInstitution(id); err != nil {
+	institutionID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid institution ID format", http.StatusBadRequest)
+		return
+	}
+	if err := service.DeleteInstitution(institutionID); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}

@@ -3,6 +3,8 @@ package community
 import (
 	"sanctor/internal/pubsub"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Message represents a message in a group
@@ -41,7 +43,15 @@ func NewMessaging(ps *pubsub.PubSub, svc *Service) *Messaging {
 // SendMessage sends a message to a group
 func (m *Messaging) SendMessage(msg *Message) error {
 	// Verify user is in group
-	if !m.service.IsUserInGroup(msg.UserID, msg.GroupID) {
+	userID, err := uuid.Parse(msg.UserID)
+	if err != nil {
+		return ErrNotMember
+	}
+	groupID, err := uuid.Parse(msg.GroupID)
+	if err != nil {
+		return ErrNotMember
+	}
+	if !m.service.IsUserInGroup(userID, groupID) {
 		return ErrNotMember
 	}
 

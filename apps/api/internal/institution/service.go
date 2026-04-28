@@ -39,8 +39,8 @@ func (s *Service) CreateInstitution(req CreateInstitutionRequest) (*Institution,
 	return institution, nil
 }
 
-func (s *Service) GetInstitution(id string) (*Institution, error) {
-	if id == "" {
+func (s *Service) GetInstitution(id uuid.UUID) (*Institution, error) {
+	if id == uuid.Nil {
 		return nil, errors.New("institution ID is required")
 	}
 	return s.repo.FindByID(id)
@@ -50,7 +50,7 @@ func (s *Service) GetAllInstitutions() ([]*Institution, error) {
 	return s.repo.FindAll(), nil
 }
 
-func (s *Service) UpdateInstitution(id string, req UpdateInstitutionRequest) (*Institution, error) {
+func (s *Service) UpdateInstitution(id uuid.UUID, req UpdateInstitutionRequest) (*Institution, error) {
 	institution, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, errors.New("institution not found")
@@ -79,8 +79,8 @@ func (s *Service) UpdateInstitution(id string, req UpdateInstitutionRequest) (*I
 	return institution, nil
 }
 
-func (s *Service) DeleteInstitution(id string) error {
-	if id == "" {
+func (s *Service) DeleteInstitution(id uuid.UUID) error {
+	if id == uuid.Nil {
 		return errors.New("institution ID is required")
 	}
 	return s.repo.Delete(id)

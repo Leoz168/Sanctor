@@ -60,7 +60,13 @@ func GetGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group, err := service.GetGroupWithMembers(id)
+	groupID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid group ID format", http.StatusBadRequest)
+		return
+	}
+
+	group, err := service.GetGroupWithMembers(groupID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -127,7 +133,13 @@ func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group, err := service.UpdateGroup(id, req)
+	groupID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid group ID format", http.StatusBadRequest)
+		return
+	}
+
+	group, err := service.UpdateGroup(groupID, req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -158,7 +170,13 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := service.DeleteGroup(id); err != nil {
+	groupID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid group ID format", http.StatusBadRequest)
+		return
+	}
+
+	if err := service.DeleteGroup(groupID); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
@@ -223,7 +241,18 @@ func RemoveUserFromGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := service.RemoveUserFromGroup(userID, groupID); err != nil {
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
+	}
+	groupUUID, err := uuid.Parse(groupID)
+	if err != nil {
+		http.Error(w, "Invalid group ID format", http.StatusBadRequest)
+		return
+	}
+
+	if err := service.RemoveUserFromGroup(userUUID, groupUUID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -250,7 +279,13 @@ func GetGroupMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	members, err := service.GetGroupMembers(groupID)
+	groupUUID, err := uuid.Parse(groupID)
+	if err != nil {
+		http.Error(w, "Invalid group ID format", http.StatusBadRequest)
+		return
+	}
+
+	members, err := service.GetGroupMembers(groupUUID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -275,7 +310,13 @@ func GetUserGroups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups, err := service.GetUserGroups(userID)
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
+	}
+
+	groups, err := service.GetUserGroups(userUUID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

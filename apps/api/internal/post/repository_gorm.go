@@ -68,13 +68,9 @@ func (r *GormRepository) CreateWithLinks(post *Post, groupIDs []uuid.UUID, insti
 }
 
 // FindByID retrieves a post by ID
-func (r *GormRepository) FindByID(id string) (*Post, error) {
-	postUUID, err := uuid.Parse(id)
-	if err != nil {
-		return nil, err
-	}
+func (r *GormRepository) FindByID(id uuid.UUID) (*Post, error) {
 	var post Post
-	err = r.db.Where("id = ?", postUUID).First(&post).Error
+	err := r.db.Where("id = ?", id).First(&post).Error
 	if err != nil {
 		return nil, err
 	}
@@ -105,12 +101,8 @@ func (r *GormRepository) Update(post *Post) error {
 }
 
 // Delete removes a post
-func (r *GormRepository) Delete(id string) error {
-	postUUID, err := uuid.Parse(id)
-	if err != nil {
-		return err
-	}
-	return r.db.Delete(&Post{}, "id = ?", postUUID).Error
+func (r *GormRepository) Delete(id uuid.UUID) error {
+	return r.db.Delete(&Post{}, "id = ?", id).Error
 }
 
 // Search posts by filters

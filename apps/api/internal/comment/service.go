@@ -42,10 +42,10 @@ func (s *Service) CreateComment(req CreateCommentRequest) (*Comment, error) {
 		return nil, errors.New("content must be 2000 characters or fewer")
 	}
 
-	if !s.repo.ExistsPost(req.PostID) {
+	if !s.repo.ExistsPost(postUUID) {
 		return nil, errors.New("post not found")
 	}
-	if !s.repo.ExistsUser(req.CreatedByUserID) {
+	if !s.repo.ExistsUser(userUUID) {
 		return nil, errors.New("user not found")
 	}
 
@@ -66,26 +66,23 @@ func (s *Service) CreateComment(req CreateCommentRequest) (*Comment, error) {
 }
 
 // GetComment retrieves one comment by ID.
-func (s *Service) GetComment(id string) (*Comment, error) {
-	if id == "" {
+func (s *Service) GetComment(id uuid.UUID) (*Comment, error) {
+	if id == uuid.Nil {
 		return nil, errors.New("comment ID is required")
 	}
 	return s.repo.FindByID(id)
 }
 
 // GetCommentsByPost retrieves comments for one post.
-func (s *Service) GetCommentsByPost(postID string) ([]*Comment, error) {
-	if postID == "" {
+func (s *Service) GetCommentsByPost(postID uuid.UUID) ([]*Comment, error) {
+	if postID == uuid.Nil {
 		return nil, errors.New("post ID is required")
-	}
-	if _, err := uuid.Parse(postID); err != nil {
-		return nil, errors.New("invalid post ID format")
 	}
 	return s.repo.FindByPostID(postID), nil
 }
 
 // UpdateComment updates comment content.
-func (s *Service) UpdateComment(id string, req UpdateCommentRequest) (*Comment, error) {
+func (s *Service) UpdateComment(id uuid.UUID, req UpdateCommentRequest) (*Comment, error) {
 	comment, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, errors.New("comment not found")
@@ -109,8 +106,8 @@ func (s *Service) UpdateComment(id string, req UpdateCommentRequest) (*Comment, 
 }
 
 // DeleteComment soft deletes a comment.
-func (s *Service) DeleteComment(id string) error {
-	if id == "" {
+func (s *Service) DeleteComment(id uuid.UUID) error {
+	if id == uuid.Nil {
 		return errors.New("comment ID is required")
 	}
 	return s.repo.Delete(id)

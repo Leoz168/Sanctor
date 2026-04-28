@@ -1,6 +1,10 @@
 package dm
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/google/uuid"
+)
 
 var (
 	ErrDMGroupNotFound = errors.New("dm group not found")
@@ -10,10 +14,10 @@ var (
 type Repository interface {
 	CreateGroup(group *DMGroup) error
 	AddUserToGroup(groupUser *DMGroupUser) error
-	GetGroupUsers(groupID string) ([]*DMGroupUser, error)
-	GetUserGroups(userID string) ([]*DMGroup, error)
-	FindDirectGroupByUsers(userA, userB string) (*DMGroup, error)
-	IsUserInGroup(userID, groupID string) bool
+	GetGroupUsers(groupID uuid.UUID) ([]*DMGroupUser, error)
+	GetUserGroups(userID uuid.UUID) ([]*DMGroup, error)
+	FindDirectGroupByUsers(userA, userB uuid.UUID) (*DMGroup, error)
+	IsUserInGroup(userID, groupID uuid.UUID) bool
 	SaveMessage(message *DMMessage) error
-	GetGroupMessages(groupID string, limit int) ([]*DMMessage, error)
+	GetGroupMessages(groupID uuid.UUID, limit int) ([]*DMMessage, error)
 }

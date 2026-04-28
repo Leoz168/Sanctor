@@ -6,6 +6,8 @@ import (
 	sharedtypes "sanctor/pkg/types"
 	"strconv"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 // Handler handles HTTP requests for posts
@@ -185,7 +187,12 @@ func (h *Handler) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := h.service.GetPost(id)
+	postID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "invalid post ID format", http.StatusBadRequest)
+		return
+	}
+	post, err := h.service.GetPost(postID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -212,6 +219,11 @@ func (h *Handler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Post ID is required", http.StatusBadRequest)
 		return
 	}
+	postID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "invalid post ID format", http.StatusBadRequest)
+		return
+	}
 
 	var req UpdatePostRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -221,9 +233,14 @@ func (h *Handler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Header.Get("userID")     // Replace with actual user ID extraction logic
 	userRole := r.Header.Get("userRole") // Replace with actual role extraction logic
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		http.Error(w, "invalid user ID format", http.StatusBadRequest)
+		return
+	}
 
 	// Update the UpdatePost call to handle both return values
-	updatedPost, err := h.service.UpdatePost(id, req, userID, userRole)
+	updatedPost, err := h.service.UpdatePost(postID, req, userUUID, userRole)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
@@ -257,7 +274,12 @@ func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeletePost(id); err != nil {
+	postID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "invalid post ID format", http.StatusBadRequest)
+		return
+	}
+	if err := h.service.DeletePost(postID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

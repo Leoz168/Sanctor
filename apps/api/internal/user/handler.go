@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"sanctor/internal/database"
+
+	"github.com/google/uuid"
 )
 
 // Initialize repository and service (defaults to in-memory)
@@ -28,13 +30,13 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	users, err := service.GetAllUsers()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	
+
 	json.NewEncoder(w).Encode(users)
 }
 
@@ -47,14 +49,19 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		http.Error(w, "User ID is required", http.StatusBadRequest)
 		return
 	}
 
-	user, err := service.GetUser(id)
+	userID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
+	}
+	user, err := service.GetUser(userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -121,7 +128,12 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := service.UpdateUser(id, req)
+	userID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
+	}
+	user, err := service.UpdateUser(userID, req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -149,7 +161,12 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := service.DeleteUser(id); err != nil {
+	userID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+		return
+	}
+	if err := service.DeleteUser(userID); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}

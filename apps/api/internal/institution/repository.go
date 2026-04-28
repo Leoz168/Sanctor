@@ -1,6 +1,10 @@
 package institution
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/google/uuid"
+)
 
 // InMemoryRepository handles data persistence for institutions in memory
 type InMemoryRepository struct {
@@ -12,7 +16,6 @@ func NewRepository() Repository {
 	return &InMemoryRepository{institutions: make(map[string]*Institution)}
 }
 
-
 func (r *InMemoryRepository) Create(institution *Institution) error {
 	if institution == nil {
 		return errors.New("institution cannot be nil")
@@ -21,8 +24,8 @@ func (r *InMemoryRepository) Create(institution *Institution) error {
 	return nil
 }
 
-func (r *InMemoryRepository) FindByID(id string) (*Institution, error) {
-	inst, exists := r.institutions[id]
+func (r *InMemoryRepository) FindByID(id uuid.UUID) (*Institution, error) {
+	inst, exists := r.institutions[id.String()]
 	if !exists {
 		return nil, errors.New("institution not found")
 	}
@@ -48,11 +51,11 @@ func (r *InMemoryRepository) Update(institution *Institution) error {
 	return nil
 }
 
-func (r *InMemoryRepository) Delete(id string) error {
-	if _, exists := r.institutions[id]; !exists {
+func (r *InMemoryRepository) Delete(id uuid.UUID) error {
+	if _, exists := r.institutions[id.String()]; !exists {
 		return errors.New("institution not found")
 	}
-	delete(r.institutions, id)
+	delete(r.institutions, id.String())
 	return nil
 }
 

@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"sanctor/internal/database"
+
+	"github.com/google/uuid"
 )
 
 // Initialize repository and service (defaults to in-memory).
@@ -30,7 +32,12 @@ func GetBookmarks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	userID := r.URL.Query().Get("userId")
-	posts, err := service.GetBookmarkedPostsByUser(userID)
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		http.Error(w, "invalid user ID format", http.StatusBadRequest)
+		return
+	}
+	posts, err := service.GetBookmarkedPostsByUser(userUUID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -51,7 +58,17 @@ func CheckBookmark(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.URL.Query().Get("userId")
 	postID := r.URL.Query().Get("postId")
-	isBookmarked, err := service.IsBookmarked(userID, postID)
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		http.Error(w, "invalid user ID format", http.StatusBadRequest)
+		return
+	}
+	postUUID, err := uuid.Parse(postID)
+	if err != nil {
+		http.Error(w, "invalid post ID format", http.StatusBadRequest)
+		return
+	}
+	isBookmarked, err := service.IsBookmarked(userUUID, postUUID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -110,7 +127,17 @@ func DeleteBookmark(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.URL.Query().Get("userId")
 	postID := r.URL.Query().Get("postId")
-	if err := service.DeleteBookmark(userID, postID); err != nil {
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		http.Error(w, "invalid user ID format", http.StatusBadRequest)
+		return
+	}
+	postUUID, err := uuid.Parse(postID)
+	if err != nil {
+		http.Error(w, "invalid post ID format", http.StatusBadRequest)
+		return
+	}
+	if err := service.DeleteBookmark(userUUID, postUUID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

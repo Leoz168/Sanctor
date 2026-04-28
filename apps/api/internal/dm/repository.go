@@ -1,6 +1,10 @@
 package dm
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/google/uuid"
+)
 
 type InMemoryRepository struct {
 	groups       map[string]*DMGroup
@@ -48,24 +52,25 @@ func (r *InMemoryRepository) AddUserToGroup(groupUser *DMGroupUser) error {
 	return nil
 }
 
-func (r *InMemoryRepository) GetGroupUsers(groupID string) ([]*DMGroupUser, error) {
+func (r *InMemoryRepository) GetGroupUsers(groupID uuid.UUID) ([]*DMGroupUser, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	if _, ok := r.groups[groupID]; !ok {
+	groupKey := groupID.String()
+	if _, ok := r.groups[groupKey]; !ok {
 		return nil, ErrDMGroupNotFound
 	}
 
-	users := make([]*DMGroupUser, len(r.groupUsers[groupID]))
-	copy(users, r.groupUsers[groupID])
+	users := make([]*DMGroupUser, len(r.groupUsers[groupKey]))
+	copy(users, r.groupUsers[groupKey])
 	return users, nil
 }
 
-func (r *InMemoryRepository) GetUserGroups(userID string) ([]*DMGroup, error) {
+func (r *InMemoryRepository) GetUserGroups(userID uuid.UUID) ([]*DMGroup, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	groupIDs := r.userGroups[userID]
+	groupIDs := r.userGroups[userID.String()]
 	groups := make([]*DMGroup, 0, len(groupIDs))
 	for _, groupID := range groupIDs {
 		if group, ok := r.groups[groupID]; ok {
@@ -75,11 +80,11 @@ func (r *InMemoryRepository) GetUserGroups(userID string) ([]*DMGroup, error) {
 	return groups, nil
 }
 
-func (r *InMemoryRepository) FindDirectGroupByUsers(userA, userB string) (*DMGroup, error) {
+func (r *InMemoryRepository) FindDirectGroupByUsers(userA, userB uuid.UUID) (*DMGroup, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	groupIDs := r.userGroups[userA]
+	groupIDs := r.userGroups[userA.String()]
 	for _, groupID := range groupIDs {
 		users := r.groupUsers[groupID]
 		if len(users) != 2 {
@@ -89,10 +94,10 @@ func (r *InMemoryRepository) FindDirectGroupByUsers(userA, userB string) (*DMGro
 		foundA := false
 		foundB := false
 		for _, member := range users {
-			if member.UserID.String() == userA {
+			if member.UserID == userA {
 				foundA = true
 			}
-			if member.UserID.String() == userB {
+			if member.UserID == userB {
 				foundB = true
 			}
 		}
@@ -107,12 +112,12 @@ func (r *InMemoryRepository) FindDirectGroupByUsers(userA, userB string) (*DMGro
 	return nil, ErrDMGroupNotFound
 }
 
-func (r *InMemoryRepository) IsUserInGroup(userID, groupID string) bool {
+func (r *InMemoryRepository) IsUserInGroup(userID, groupID uuid.UUID) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	for _, member := range r.groupUsers[groupID] {
-		if member.UserID.String() == userID {
+	for _, member := range r.groupUsers[groupID.String()] {
+		if member.UserID == userID {
 			return true
 		}
 	}
@@ -134,15 +139,16 @@ func (r *InMemoryRepository) SaveMessage(message *DMMessage) error {
 	return nil
 }
 
-func (r *InMemoryRepository) GetGroupMessages(groupID string, limit int) ([]*DMMessage, error) {
+func (r *InMemoryRepository) GetGroupMessages(groupID uuid.UUID, limit int) ([]*DMMessage, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	if _, ok := r.groups[groupID]; !ok {
+	groupKey := groupID.String()
+	if _, ok := r.groups[groupKey]; !ok {
 		return nil, ErrDMGroupNotFound
 	}
 
-	messages := r.groupMessage[groupID]
+	messages := r.groupMessage[groupKey]
 	if limit <= 0 || len(messages) <= limit {
 		out := make([]*DMMessage, len(messages))
 		copy(out, messages)

@@ -16,8 +16,8 @@ func NewService(repo Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) CreateOrGetDirectGroup(userID, peerUserID string) (*DMGroup, error) {
-	if userID == "" || peerUserID == "" {
+func (s *Service) CreateOrGetDirectGroup(userID, peerUserID uuid.UUID) (*DMGroup, error) {
+	if userID == uuid.Nil || peerUserID == uuid.Nil {
 		return nil, errors.New("userId and peerUserId are required")
 	}
 	if userID == peerUserID {
@@ -32,15 +32,6 @@ func (s *Service) CreateOrGetDirectGroup(userID, peerUserID string) (*DMGroup, e
 		return nil, err
 	}
 
-	userUUID, err := uuid.Parse(userID)
-	if err != nil {
-		return nil, errors.New("invalid userId format")
-	}
-	peerUUID, err := uuid.Parse(peerUserID)
-	if err != nil {
-		return nil, errors.New("invalid peerUserId format")
-	}
-
 	now := time.Now()
 	newGroup := &DMGroup{
 		ID:        uuid.New(),
@@ -52,19 +43,19 @@ func (s *Service) CreateOrGetDirectGroup(userID, peerUserID string) (*DMGroup, e
 		return nil, err
 	}
 
-	if err := s.repo.AddUserToGroup(&DMGroupUser{GroupID: newGroup.ID, UserID: userUUID, JoinedAt: now}); err != nil {
+	if err := s.repo.AddUserToGroup(&DMGroupUser{GroupID: newGroup.ID, UserID: userID, JoinedAt: now}); err != nil {
 		return nil, err
 	}
 
-	if err := s.repo.AddUserToGroup(&DMGroupUser{GroupID: newGroup.ID, UserID: peerUUID, JoinedAt: now}); err != nil {
+	if err := s.repo.AddUserToGroup(&DMGroupUser{GroupID: newGroup.ID, UserID: peerUserID, JoinedAt: now}); err != nil {
 		return nil, err
 	}
 
 	return newGroup, nil
 }
 
-func (s *Service) GetUserGroups(userID string) ([]*DMGroup, error) {
-	if userID == "" {
+func (s *Service) GetUserGroups(userID uuid.UUID) ([]*DMGroup, error) {
+	if userID == uuid.Nil {
 		return nil, errors.New("userId is required")
 	}
 	return s.repo.GetUserGroups(userID)
@@ -89,7 +80,7 @@ func (s *Service) SendMessage(req SendMessageRequest) (*DMMessage, error) {
 		return nil, errors.New("content is required")
 	}
 
-	if !s.repo.IsUserInGroup(req.UserID, req.GroupID) {
+	if !s.repo.IsUserInGroup(userUUID, groupUUID) {
 		return nil, ErrNotDMMember
 	}
 
@@ -110,8 +101,8 @@ func (s *Service) SendMessage(req SendMessageRequest) (*DMMessage, error) {
 	return message, nil
 }
 
-func (s *Service) GetMessages(userID, groupID string, limit int) ([]*DMMessage, error) {
-	if groupID == "" || userID == "" {
+func (s *Service) GetMessages(userID, groupID uuid.UUID, limit int) ([]*DMMessage, error) {
+	if groupID == uuid.Nil || userID == uuid.Nil {
 		return nil, errors.New("groupId and userId are required")
 	}
 
@@ -122,6 +113,6 @@ func (s *Service) GetMessages(userID, groupID string, limit int) ([]*DMMessage, 
 	return s.repo.GetGroupMessages(groupID, limit)
 }
 
-func (s *Service) IsUserInGroup(userID, groupID string) bool {
+func (s *Service) IsUserInGroup(userID, groupID uuid.UUID) bool {
 	return s.repo.IsUserInGroup(userID, groupID)
 }

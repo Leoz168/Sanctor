@@ -1,6 +1,10 @@
 package user
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/google/uuid"
+)
 
 // InMemoryRepository handles data persistence for users in memory
 type InMemoryRepository struct {
@@ -24,8 +28,8 @@ func (r *InMemoryRepository) Create(user *User) error {
 }
 
 // FindByID retrieves a user by ID
-func (r *InMemoryRepository) FindByID(id string) (*User, error) {
-	user, exists := r.users[id]
+func (r *InMemoryRepository) FindByID(id uuid.UUID) (*User, error) {
+	user, exists := r.users[id.String()]
 	if !exists {
 		return nil, errors.New("user not found")
 	}
@@ -54,11 +58,11 @@ func (r *InMemoryRepository) Update(user *User) error {
 }
 
 // Delete removes a user from the repository
-func (r *InMemoryRepository) Delete(id string) error {
-	if _, exists := r.users[id]; !exists {
+func (r *InMemoryRepository) Delete(id uuid.UUID) error {
+	if _, exists := r.users[id.String()]; !exists {
 		return errors.New("user not found")
 	}
-	delete(r.users, id)
+	delete(r.users, id.String())
 	return nil
 }
 

@@ -1,12 +1,14 @@
 package comment
 
+import "github.com/google/uuid"
+
 // Repository defines persistence operations for comments.
 type Repository interface {
 	Create(comment *Comment) error
-	FindByID(id string) (*Comment, error)
-	FindByPostID(postID string) []*Comment
+	FindByID(id uuid.UUID) (*Comment, error)
+	FindByPostID(postID uuid.UUID) []*Comment
 	Update(comment *Comment) error
-	Delete(id string) error
-	ExistsPost(postID string) bool
-	ExistsUser(userID string) bool
+	Delete(id uuid.UUID) error
+	ExistsPost(postID uuid.UUID) bool
+	ExistsUser(userID uuid.UUID) bool
 }

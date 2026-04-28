@@ -12,12 +12,12 @@ import (
 
 // PostRepository defines the methods required for a post repository
 type PostRepository interface {
-	FindByID(id string) (*Post, error)
+	FindByID(id uuid.UUID) (*Post, error)
 	FindAll() ([]*Post, error)
 	Search(filters PostSearchFilters) ([]*Post, error)
 	CreateWithLinks(post *Post, groupIDs []uuid.UUID, institutionIDs []uuid.UUID) (*Post, error)
 	Update(post *Post) error
-	Delete(id string) error
+	Delete(id uuid.UUID) error
 }
 
 // Service handles business logic for posts
@@ -155,7 +155,7 @@ func uniqueIDs(ids []string) []string {
 }
 
 // GetPost retrieves a post by ID
-func (s *Service) GetPost(id string) (*Post, error) {
+func (s *Service) GetPost(id uuid.UUID) (*Post, error) {
 	if s.repo != nil {
 		return s.repo.FindByID(id)
 	}
@@ -194,7 +194,7 @@ func (s *Service) SearchPosts(filters PostSearchFilters) ([]*Post, error) {
 }
 
 // UpdatePost updates an existing post
-func (s *Service) UpdatePost(id string, req UpdatePostRequest, userID string, userRole string) (*Post, error) {
+func (s *Service) UpdatePost(id uuid.UUID, req UpdatePostRequest, userID uuid.UUID, userRole string) (*Post, error) {
 	if s.repo == nil {
 		return nil, fmt.Errorf("repository not initialized")
 	}
@@ -209,7 +209,7 @@ func (s *Service) UpdatePost(id string, req UpdatePostRequest, userID string, us
 	}
 
 	// Check if the user is allowed to update the post
-	if userRole != "admin" && post.CreatedByUserID.String() != userID {
+	if userRole != "admin" && post.CreatedByUserID != userID {
 		return nil, errors.New("you are not allowed to update this post")
 	}
 
@@ -246,14 +246,10 @@ func (s *Service) UpdatePost(id string, req UpdatePostRequest, userID string, us
 	}
 
 	// Update metadata fields
-	if userID == "" {
+	if userID == uuid.Nil {
 		return nil, errors.New("user ID is required")
 	}
-	updaterUUID, err := uuid.Parse(userID)
-	if err != nil {
-		return nil, errors.New("invalid user ID format")
-	}
-	post.UpdatedByUserID = updaterUUID
+	post.UpdatedByUserID = userID
 	post.UpdatedAt = time.Now()
 
 	// Validate required fields
@@ -270,7 +266,7 @@ func (s *Service) UpdatePost(id string, req UpdatePostRequest, userID string, us
 }
 
 // DeletePost deletes a post
-func (s *Service) DeletePost(id string) error {
+func (s *Service) DeletePost(id uuid.UUID) error {
 	if s.repo != nil {
 		return s.repo.Delete(id)
 	}

@@ -10,6 +10,7 @@ import (
 	"sanctor/internal/auth"
 	"sanctor/internal/database"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -47,7 +48,18 @@ func CreateDirectGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group, err := service.CreateOrGetDirectGroup(req.UserID, req.PeerUserID)
+	userID, err := uuid.Parse(strings.TrimSpace(req.UserID))
+	if err != nil {
+		http.Error(w, "invalid userId format", http.StatusBadRequest)
+		return
+	}
+	peerUserID, err := uuid.Parse(strings.TrimSpace(req.PeerUserID))
+	if err != nil {
+		http.Error(w, "invalid peerUserId format", http.StatusBadRequest)
+		return
+	}
+
+	group, err := service.CreateOrGetDirectGroup(userID, peerUserID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -66,7 +78,12 @@ func GetUserGroups(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.URL.Query().Get("userId")
-	groups, err := service.GetUserGroups(userID)
+	userUUID, err := uuid.Parse(strings.TrimSpace(userID))
+	if err != nil {
+		http.Error(w, "invalid userId format", http.StatusBadRequest)
+		return
+	}
+	groups, err := service.GetUserGroups(userUUID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -129,7 +146,18 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	messages, err := service.GetMessages(userID, groupID, limit)
+	userUUID, err := uuid.Parse(strings.TrimSpace(userID))
+	if err != nil {
+		http.Error(w, "invalid userId format", http.StatusBadRequest)
+		return
+	}
+	groupUUID, err := uuid.Parse(strings.TrimSpace(groupID))
+	if err != nil {
+		http.Error(w, "invalid groupId format", http.StatusBadRequest)
+		return
+	}
+
+	messages, err := service.GetMessages(userUUID, groupUUID, limit)
 	if err != nil {
 		if errors.Is(err, ErrNotDMMember) {
 			http.Error(w, err.Error(), http.StatusForbidden)
@@ -164,7 +192,18 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !service.IsUserInGroup(userID, groupID) {
+	userUUID, err := uuid.Parse(strings.TrimSpace(userID))
+	if err != nil {
+		http.Error(w, "invalid token user ID", http.StatusUnauthorized)
+		return
+	}
+	groupUUID, err := uuid.Parse(strings.TrimSpace(groupID))
+	if err != nil {
+		http.Error(w, "invalid groupId format", http.StatusBadRequest)
+		return
+	}
+
+	if !service.IsUserInGroup(userUUID, groupUUID) {
 		http.Error(w, ErrNotDMMember.Error(), http.StatusForbidden)
 		return
 	}

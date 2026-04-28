@@ -66,7 +66,7 @@ func (s *Service) CreateGroup(req CreateCommunityRequest) (*Community, error) {
 
 	if err := s.repo.AddUserToGroup(userGroup); err != nil {
 		// Rollback: delete the group if adding creator fails
-		s.repo.Delete(group.ID.String())
+		s.repo.Delete(group.ID)
 		return nil, errors.New("failed to add creator to group")
 	}
 
@@ -78,7 +78,7 @@ func (s *Service) CreateGroup(req CreateCommunityRequest) (*Community, error) {
 
 	if err := s.repo.AddGroupToInstitution(groupInstitution); err != nil {
 		// Rollback: delete the group and owner membership if institution linking fails
-		s.repo.Delete(group.ID.String())
+		s.repo.Delete(group.ID)
 		return nil, errors.New("failed to link group to institution")
 	}
 
@@ -86,8 +86,8 @@ func (s *Service) CreateGroup(req CreateCommunityRequest) (*Community, error) {
 }
 
 // GetGroup retrieves a group by ID
-func (s *Service) GetGroup(id string) (*Community, error) {
-	if id == "" {
+func (s *Service) GetGroup(id uuid.UUID) (*Community, error) {
+	if id == uuid.Nil {
 		return nil, errors.New("group ID is required")
 	}
 
@@ -95,7 +95,7 @@ func (s *Service) GetGroup(id string) (*Community, error) {
 }
 
 // GetGroupWithMembers retrieves a group with member count
-func (s *Service) GetGroupWithMembers(id string) (*CommunityWithMembers, error) {
+func (s *Service) GetGroupWithMembers(id uuid.UUID) (*CommunityWithMembers, error) {
 	group, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (s *Service) GetAllGroups() ([]*Community, error) {
 }
 
 // UpdateGroup updates an existing group
-func (s *Service) UpdateGroup(id string, req UpdateCommunityRequest) (*Community, error) {
+func (s *Service) UpdateGroup(id uuid.UUID, req UpdateCommunityRequest) (*Community, error) {
 	group, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, errors.New("group not found")
@@ -141,8 +141,8 @@ func (s *Service) UpdateGroup(id string, req UpdateCommunityRequest) (*Community
 }
 
 // DeleteGroup deletes a group by ID
-func (s *Service) DeleteGroup(id string) error {
-	if id == "" {
+func (s *Service) DeleteGroup(id uuid.UUID) error {
+	if id == uuid.Nil {
 		return errors.New("group ID is required")
 	}
 
@@ -165,7 +165,7 @@ func (s *Service) AddUserToGroup(req AddUserToCommunityRequest) error {
 	}
 
 	// Validate group exists
-	if _, err := s.repo.FindByID(req.CommunityID); err != nil {
+	if _, err := s.repo.FindByID(groupUUID); err != nil {
 		return errors.New("group not found")
 	}
 
@@ -191,8 +191,8 @@ func (s *Service) AddUserToGroup(req AddUserToCommunityRequest) error {
 }
 
 // RemoveUserFromGroup removes a user from a group
-func (s *Service) RemoveUserFromGroup(userID, groupID string) error {
-	if userID == "" || groupID == "" {
+func (s *Service) RemoveUserFromGroup(userID, groupID uuid.UUID) error {
+	if userID == uuid.Nil || groupID == uuid.Nil {
 		return errors.New("user ID and group ID are required")
 	}
 
@@ -214,8 +214,8 @@ func (s *Service) RemoveUserFromGroup(userID, groupID string) error {
 }
 
 // GetGroupMembers returns all members of a group
-func (s *Service) GetGroupMembers(groupID string) ([]*UserCommunityInfo, error) {
-	if groupID == "" {
+func (s *Service) GetGroupMembers(groupID uuid.UUID) ([]*UserCommunityInfo, error) {
+	if groupID == uuid.Nil {
 		return nil, errors.New("group ID is required")
 	}
 
@@ -237,8 +237,8 @@ func (s *Service) GetGroupMembers(groupID string) ([]*UserCommunityInfo, error) 
 }
 
 // GetUserGroups returns all groups a user belongs to
-func (s *Service) GetUserGroups(userID string) ([]*UserCommunity, error) {
-	if userID == "" {
+func (s *Service) GetUserGroups(userID uuid.UUID) ([]*UserCommunity, error) {
+	if userID == uuid.Nil {
 		return nil, errors.New("user ID is required")
 	}
 
@@ -246,11 +246,11 @@ func (s *Service) GetUserGroups(userID string) ([]*UserCommunity, error) {
 }
 
 // IsUserInGroup checks if a user is a member of a group
-func (s *Service) IsUserInGroup(userID, groupID string) bool {
+func (s *Service) IsUserInGroup(userID, groupID uuid.UUID) bool {
 	return s.repo.IsUserInGroup(userID, groupID)
 }
 
 // GetUserRole returns a user's role in a group
-func (s *Service) GetUserRole(userID, groupID string) (string, error) {
+func (s *Service) GetUserRole(userID, groupID uuid.UUID) (string, error) {
 	return s.repo.GetUserRole(userID, groupID)
 }

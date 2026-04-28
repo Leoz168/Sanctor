@@ -86,8 +86,8 @@ func (s *Service) CreateUser(req CreateUserRequest) (*User, error) {
 }
 
 // GetUser retrieves a user by ID
-func (s *Service) GetUser(id string) (*User, error) {
-	if id == "" {
+func (s *Service) GetUser(id uuid.UUID) (*User, error) {
+	if id == uuid.Nil {
 		return nil, errors.New("user ID is required")
 	}
 
@@ -105,7 +105,7 @@ func (s *Service) GetAllUsers() ([]*User, error) {
 }
 
 // UpdateUser updates an existing user
-func (s *Service) UpdateUser(id string, req UpdateUserRequest) (*User, error) {
+func (s *Service) UpdateUser(id uuid.UUID, req UpdateUserRequest) (*User, error) {
 	user, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, errors.New("user not found")
@@ -157,8 +157,8 @@ func (s *Service) UpdateUser(id string, req UpdateUserRequest) (*User, error) {
 }
 
 // DeleteUser deletes a user by ID
-func (s *Service) DeleteUser(id string) error {
-	if id == "" {
+func (s *Service) DeleteUser(id uuid.UUID) error {
+	if id == uuid.Nil {
 		return errors.New("user ID is required")
 	}
 

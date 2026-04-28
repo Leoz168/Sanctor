@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"sanctor/internal/database"
+
+	"github.com/google/uuid"
 )
 
 // Initialize repository and service (defaults to in-memory).
@@ -30,7 +32,12 @@ func GetComments(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	postID := r.URL.Query().Get("postId")
-	comments, err := service.GetCommentsByPost(postID)
+	postUUID, err := uuid.Parse(postID)
+	if err != nil {
+		http.Error(w, "invalid post ID format", http.StatusBadRequest)
+		return
+	}
+	comments, err := service.GetCommentsByPost(postUUID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -50,7 +57,12 @@ func GetComment(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	id := r.URL.Query().Get("id")
-	comment, err := service.GetComment(id)
+	commentID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "invalid comment ID format", http.StatusBadRequest)
+		return
+	}
+	comment, err := service.GetComment(commentID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -117,7 +129,12 @@ func UpdateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	comment, err := service.UpdateComment(id, req)
+	commentID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "invalid comment ID format", http.StatusBadRequest)
+		return
+	}
+	comment, err := service.UpdateComment(commentID, req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -140,7 +157,12 @@ func DeleteComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := r.URL.Query().Get("id")
-	if err := service.DeleteComment(id); err != nil {
+	commentID, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "invalid comment ID format", http.StatusBadRequest)
+		return
+	}
+	if err := service.DeleteComment(commentID); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}

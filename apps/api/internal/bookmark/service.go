@@ -37,14 +37,14 @@ func (s *Service) CreateBookmark(req CreateBookmarkRequest) (*Bookmark, error) {
 	if err != nil {
 		return nil, errors.New("invalid post ID format")
 	}
-	if !s.repo.ExistsUser(userID) {
+	if !s.repo.ExistsUser(userUUID) {
 		return nil, errors.New("user not found")
 	}
-	if !s.repo.ExistsPost(postID) {
+	if !s.repo.ExistsPost(postUUID) {
 		return nil, errors.New("post not found")
 	}
 
-	exists, err := s.repo.Exists(userID, postID)
+	exists, err := s.repo.Exists(userUUID, postUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -65,69 +65,39 @@ func (s *Service) CreateBookmark(req CreateBookmarkRequest) (*Bookmark, error) {
 }
 
 // DeleteBookmark removes a bookmark for one post.
-func (s *Service) DeleteBookmark(userID, postID string) error {
-	userID = strings.TrimSpace(userID)
-	postID = strings.TrimSpace(postID)
-
-	if userID == "" {
+func (s *Service) DeleteBookmark(userID, postID uuid.UUID) error {
+	if userID == uuid.Nil {
 		return errors.New("user ID is required")
 	}
-	if _, err := uuid.Parse(userID); err != nil {
-		return errors.New("invalid user ID format")
-	}
-	if postID == "" {
+	if postID == uuid.Nil {
 		return errors.New("post ID is required")
 	}
-	if _, err := uuid.Parse(postID); err != nil {
-		return errors.New("invalid post ID format")
-	}
-
 	return s.repo.Delete(userID, postID)
 }
 
 // GetBookmarksByUser returns bookmarks for one user.
-func (s *Service) GetBookmarksByUser(userID string) ([]*Bookmark, error) {
-	userID = strings.TrimSpace(userID)
-	if userID == "" {
+func (s *Service) GetBookmarksByUser(userID uuid.UUID) ([]*Bookmark, error) {
+	if userID == uuid.Nil {
 		return nil, errors.New("user ID is required")
 	}
-	if _, err := uuid.Parse(userID); err != nil {
-		return nil, errors.New("invalid user ID format")
-	}
-
 	return s.repo.FindByUserID(userID)
 }
 
 // GetBookmarkedPostsByUser returns full posts bookmarked by one user.
-func (s *Service) GetBookmarkedPostsByUser(userID string) ([]*BookmarkedPost, error) {
-	userID = strings.TrimSpace(userID)
-	if userID == "" {
+func (s *Service) GetBookmarkedPostsByUser(userID uuid.UUID) ([]*BookmarkedPost, error) {
+	if userID == uuid.Nil {
 		return nil, errors.New("user ID is required")
 	}
-	if _, err := uuid.Parse(userID); err != nil {
-		return nil, errors.New("invalid user ID format")
-	}
-
 	return s.repo.FindPostsByUserID(userID)
 }
 
 // IsBookmarked checks whether a post is bookmarked by a user.
-func (s *Service) IsBookmarked(userID, postID string) (bool, error) {
-	userID = strings.TrimSpace(userID)
-	postID = strings.TrimSpace(postID)
-
-	if userID == "" {
+func (s *Service) IsBookmarked(userID, postID uuid.UUID) (bool, error) {
+	if userID == uuid.Nil {
 		return false, errors.New("user ID is required")
 	}
-	if _, err := uuid.Parse(userID); err != nil {
-		return false, errors.New("invalid user ID format")
-	}
-	if postID == "" {
+	if postID == uuid.Nil {
 		return false, errors.New("post ID is required")
 	}
-	if _, err := uuid.Parse(postID); err != nil {
-		return false, errors.New("invalid post ID format")
-	}
-
 	return s.repo.Exists(userID, postID)
 }

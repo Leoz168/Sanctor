@@ -4,6 +4,8 @@ import (
 	"errors"
 	"sort"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // InMemoryRepository handles comment persistence in memory.
@@ -24,18 +26,18 @@ func (r *InMemoryRepository) Create(comment *Comment) error {
 	return nil
 }
 
-func (r *InMemoryRepository) FindByID(id string) (*Comment, error) {
-	comment, exists := r.comments[id]
+func (r *InMemoryRepository) FindByID(id uuid.UUID) (*Comment, error) {
+	comment, exists := r.comments[id.String()]
 	if !exists || comment.DeletedAt != nil {
 		return nil, errors.New("comment not found")
 	}
 	return comment, nil
 }
 
-func (r *InMemoryRepository) FindByPostID(postID string) []*Comment {
+func (r *InMemoryRepository) FindByPostID(postID uuid.UUID) []*Comment {
 	result := make([]*Comment, 0)
 	for _, comment := range r.comments {
-		if comment.PostID.String() == postID && comment.DeletedAt == nil {
+		if comment.PostID == postID && comment.DeletedAt == nil {
 			result = append(result, comment)
 		}
 	}
@@ -59,8 +61,8 @@ func (r *InMemoryRepository) Update(comment *Comment) error {
 	return nil
 }
 
-func (r *InMemoryRepository) Delete(id string) error {
-	comment, exists := r.comments[id]
+func (r *InMemoryRepository) Delete(id uuid.UUID) error {
+	comment, exists := r.comments[id.String()]
 	if !exists || comment.DeletedAt != nil {
 		return errors.New("comment not found")
 	}
@@ -71,11 +73,11 @@ func (r *InMemoryRepository) Delete(id string) error {
 }
 
 // ExistsPost returns true in memory mode because posts are not tracked in this repository.
-func (r *InMemoryRepository) ExistsPost(postID string) bool {
-	return postID != ""
+func (r *InMemoryRepository) ExistsPost(postID uuid.UUID) bool {
+	return postID != uuid.Nil
 }
 
 // ExistsUser returns true in memory mode because users are not tracked in this repository.
-func (r *InMemoryRepository) ExistsUser(userID string) bool {
-	return userID != ""
+func (r *InMemoryRepository) ExistsUser(userID uuid.UUID) bool {
+	return userID != uuid.Nil
 }

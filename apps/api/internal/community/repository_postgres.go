@@ -31,16 +31,12 @@ func (r *PostgresRepository) Create(group *Community) error {
 }
 
 // FindByID finds a group by ID
-func (r *PostgresRepository) FindByID(id string) (*Community, error) {
-	groupUUID, err := uuid.Parse(id)
-	if err != nil {
-		return nil, errors.New("invalid group ID format")
-	}
+func (r *PostgresRepository) FindByID(id uuid.UUID) (*Community, error) {
 	group := &Community{}
 	query := `SELECT id, name, description, is_private, created_by, created_at, updated_at 
 	          FROM groups WHERE id = $1`
 
-	err = r.db.QueryRow(query, groupUUID).Scan(&group.ID, &group.Name, &group.Description,
+	err := r.db.QueryRow(query, id).Scan(&group.ID, &group.Name, &group.Description,
 		&group.IsPrivate, &group.CreatedBy, &group.CreatedAt, &group.UpdatedAt)
 
 	if err == sql.ErrNoRows {
@@ -90,13 +86,9 @@ func (r *PostgresRepository) Update(group *Community) error {
 }
 
 // Delete deletes a group (CASCADE will delete user_groups automatically)
-func (r *PostgresRepository) Delete(id string) error {
-	groupUUID, err := uuid.Parse(id)
-	if err != nil {
-		return errors.New("invalid group ID format")
-	}
+func (r *PostgresRepository) Delete(id uuid.UUID) error {
 	query := `DELETE FROM groups WHERE id = $1`
-	result, err := r.db.Exec(query, groupUUID)
+	result, err := r.db.Exec(query, id)
 	if err != nil {
 		return err
 	}
@@ -128,17 +120,9 @@ func (r *PostgresRepository) AddGroupToInstitution(groupInstitution *CommunityIn
 }
 
 // RemoveUserFromGroup removes a user from a group
-func (r *PostgresRepository) RemoveUserFromGroup(userID, groupID string) error {
-	userUUID, err := uuid.Parse(userID)
-	if err != nil {
-		return errors.New("invalid user ID format")
-	}
-	groupUUID, err := uuid.Parse(groupID)
-	if err != nil {
-		return errors.New("invalid group ID format")
-	}
+func (r *PostgresRepository) RemoveUserFromGroup(userID, groupID uuid.UUID) error {
 	query := `DELETE FROM user_groups WHERE user_id = $1 AND group_id = $2`
-	result, err := r.db.Exec(query, userUUID, groupUUID)
+	result, err := r.db.Exec(query, userID, groupID)
 	if err != nil {
 		return err
 	}
@@ -151,15 +135,11 @@ func (r *PostgresRepository) RemoveUserFromGroup(userID, groupID string) error {
 }
 
 // GetGroupMembers returns all members of a group
-func (r *PostgresRepository) GetGroupMembers(groupID string) ([]*UserCommunity, error) {
-	groupUUID, err := uuid.Parse(groupID)
-	if err != nil {
-		return nil, errors.New("invalid group ID format")
-	}
+func (r *PostgresRepository) GetGroupMembers(groupID uuid.UUID) ([]*UserCommunity, error) {
 	query := `SELECT user_id, group_id, role, joined_at 
 	          FROM user_groups WHERE group_id = $1 ORDER BY joined_at`
 
-	rows, err := r.db.Query(query, groupUUID)
+	rows, err := r.db.Query(query, groupID)
 	if err != nil {
 		return nil, err
 	}
@@ -176,15 +156,11 @@ func (r *PostgresRepository) GetGroupMembers(groupID string) ([]*UserCommunity, 
 }
 
 // GetUserGroups returns all groups a user belongs to
-func (r *PostgresRepository) GetUserGroups(userID string) []*UserCommunity {
-	userUUID, err := uuid.Parse(userID)
-	if err != nil {
-		return []*UserCommunity{}
-	}
+func (r *PostgresRepository) GetUserGroups(userID uuid.UUID) []*UserCommunity {
 	query := `SELECT user_id, group_id, role, joined_at 
 	          FROM user_groups WHERE user_id = $1 ORDER BY joined_at DESC`
 
-	rows, err := r.db.Query(query, userUUID)
+	rows, err := r.db.Query(query, userID)
 	if err != nil {
 		return []*UserCommunity{}
 	}
@@ -201,47 +177,27 @@ func (r *PostgresRepository) GetUserGroups(userID string) []*UserCommunity {
 }
 
 // IsUserInGroup checks if a user is in a group
-func (r *PostgresRepository) IsUserInGroup(userID, groupID string) bool {
-	userUUID, err := uuid.Parse(userID)
-	if err != nil {
-		return false
-	}
-	groupUUID, err := uuid.Parse(groupID)
-	if err != nil {
-		return false
-	}
+func (r *PostgresRepository) IsUserInGroup(userID, groupID uuid.UUID) bool {
 	var exists bool
 	query := `SELECT EXISTS(SELECT 1 FROM user_groups WHERE user_id = $1 AND group_id = $2)`
-	_ = r.db.QueryRow(query, userUUID, groupUUID).Scan(&exists)
+	_ = r.db.QueryRow(query, userID, groupID).Scan(&exists)
 	return exists
 }
 
 // GetMemberCount returns the number of members in a group
-func (r *PostgresRepository) GetMemberCount(groupID string) int {
-	groupUUID, err := uuid.Parse(groupID)
-	if err != nil {
-		return 0
-	}
+func (r *PostgresRepository) GetMemberCount(groupID uuid.UUID) int {
 	var count int
 	query := `SELECT COUNT(*) FROM user_groups WHERE group_id = $1`
-	_ = r.db.QueryRow(query, groupUUID).Scan(&count)
+	_ = r.db.QueryRow(query, groupID).Scan(&count)
 	return count
 }
 
 // GetUserRole returns the role of a user in a group
-func (r *PostgresRepository) GetUserRole(userID, groupID string) (string, error) {
-	userUUID, err := uuid.Parse(userID)
-	if err != nil {
-		return "", errors.New("invalid user ID format")
-	}
-	groupUUID, err := uuid.Parse(groupID)
-	if err != nil {
-		return "", errors.New("invalid group ID format")
-	}
+func (r *PostgresRepository) GetUserRole(userID, groupID uuid.UUID) (string, error) {
 	var role string
 	query := `SELECT role FROM user_groups WHERE user_id = $1 AND group_id = $2`
 
-	err = r.db.QueryRow(query, userUUID, groupUUID).Scan(&role)
+	err := r.db.QueryRow(query, userID, groupID).Scan(&role)
 	if err == sql.ErrNoRows {
 		return "", errors.New("user not in group")
 	}

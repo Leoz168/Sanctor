@@ -1,19 +1,23 @@
 package user
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/google/uuid"
+)
 
 // VerifyPassword checks if the provided password matches the user's password
-func (s *Service) VerifyPassword(userID, password string) (bool, error) {
+func (s *Service) VerifyPassword(userID uuid.UUID, password string) (bool, error) {
 	user, err := s.repo.FindByID(userID)
 	if err != nil {
 		return false, err
 	}
-	
+
 	return CheckPassword(password, user.PasswordHash), nil
 }
 
 // ChangePassword updates a user's password
-func (s *Service) ChangePassword(userID, oldPassword, newPassword string) error {
+func (s *Service) ChangePassword(userID uuid.UUID, oldPassword, newPassword string) error {
 	user, err := s.repo.FindByID(userID)
 	if err != nil {
 		return errors.New("user not found")

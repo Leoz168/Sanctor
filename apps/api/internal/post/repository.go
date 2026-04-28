@@ -30,7 +30,7 @@ func (r *Repository) CreateWithLinks(post *Post, groupIDs []uuid.UUID, instituti
 }
 
 // FindByID retrieves a post by ID from the database
-func (r *Repository) FindByID(id string) (*Post, error) {
+func (r *Repository) FindByID(id uuid.UUID) (*Post, error) {
 	var post Post
 	if err := r.db.Where("id = ?", id).First(&post).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -147,7 +147,7 @@ func (r *Repository) Update(post *Post) error {
 }
 
 // Delete removes a post
-func (r *Repository) Delete(id string) error {
-	delete(r.posts, id)
+func (r *Repository) Delete(id uuid.UUID) error {
+	delete(r.posts, id.String())
 	return nil
 }
