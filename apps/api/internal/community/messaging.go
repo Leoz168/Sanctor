@@ -1,4 +1,4 @@
-package group
+package community
 
 import (
 	"sanctor/internal/pubsub"
@@ -17,11 +17,11 @@ type Message struct {
 
 // GroupEvent represents events that happen in groups
 type GroupEvent struct {
-	Type      string    `json:"type"` // "user_joined", "user_left", "message", "group_updated", "group_deleted"
-	GroupID   string    `json:"groupId"`
-	UserID    string    `json:"userId,omitempty"`
+	Type      string      `json:"type"` // "user_joined", "user_left", "message", "group_updated", "group_deleted"
+	GroupID   string      `json:"groupId"`
+	UserID    string      `json:"userId,omitempty"`
 	Data      interface{} `json:"data,omitempty"`
-	Timestamp time.Time `json:"timestamp"`
+	Timestamp time.Time   `json:"timestamp"`
 }
 
 // Messaging handles group messaging and notifications
@@ -110,7 +110,7 @@ func (m *Messaging) NotifyUserLeft(groupID, userID string) {
 }
 
 // NotifyGroupUpdated sends a notification when a group is updated
-func (m *Messaging) NotifyGroupUpdated(group *Group) {
+func (m *Messaging) NotifyGroupUpdated(group *Community) {
 	event := &GroupEvent{
 		Type:    "group_updated",
 		GroupID: group.ID.String(),

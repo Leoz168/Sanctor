@@ -1,12 +1,13 @@
-package group
+package community
 
 import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/google/uuid"
 	"sanctor/internal/database"
 	"sanctor/internal/pubsub"
+
+	"github.com/google/uuid"
 )
 
 // Initialize repository, service, and messaging (defaults to in-memory)
@@ -83,7 +84,7 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	var req CreateGroupRequest
+	var req CreateCommunityRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -120,7 +121,7 @@ func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req UpdateGroupRequest
+	var req UpdateCommunityRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -183,7 +184,7 @@ func AddUserToGroup(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	var req AddUserToGroupRequest
+	var req AddUserToCommunityRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -195,7 +196,7 @@ func AddUserToGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Notify group members
-	messaging.NotifyUserJoined(req.GroupID, req.UserID)
+	messaging.NotifyUserJoined(req.CommunityID, req.UserID)
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{"message": "User added to group successfully"})

@@ -10,10 +10,11 @@ import (
 	"sanctor/internal/auth"
 	"sanctor/internal/bookmark"
 	"sanctor/internal/comment"
+	"sanctor/internal/community"
 	"sanctor/internal/config"
 	"sanctor/internal/database"
+
 	//"sanctor/internal/dm" //  not currently used, but will be needed for future DM features
-	"sanctor/internal/group"
 	"sanctor/internal/institution"
 	"sanctor/internal/middleware"
 	"sanctor/internal/picture"
@@ -65,7 +66,7 @@ func main() {
 			defer db.Close()
 
 			// Run auto-migration for all models
-			if err := db.AutoMigrate(&user.User{}, &group.Group{}, &group.UserGroup{}, &group.GroupInstitution{}, &post.Post{}, &post.PostGroup{}, &post.PostInstitution{}, &bookmark.Bookmark{}, &comment.Comment{}, &picture.Picture{}, &institution.Institution{}); err != nil {
+			if err := db.AutoMigrate(&user.User{}, &community.Community{}, &community.UserCommunity{}, &community.CommunityInstitution{}, &post.Post{}, &post.PostCommunity{}, &post.PostInstitution{}, &bookmark.Bookmark{}, &comment.Comment{}, &picture.Picture{}, &institution.Institution{}); err != nil {
 				log.Printf("⚠️  Failed to migrate database: %v", err)
 			}
 
@@ -74,7 +75,7 @@ func main() {
 
 			log.Println("Initializing modules with database...")
 			user.InitWithDatabase(db)
-			group.InitWithDatabase(db)
+			community.InitWithDatabase(db)
 			institution.InitWithDatabase(db)
 			bookmark.InitWithDatabase(db)
 			comment.InitWithDatabase(db)
@@ -118,20 +119,20 @@ func main() {
 	http.HandleFunc("/api/users/delete", user.DeleteUser)
 
 	// Group endpoints
-	http.HandleFunc("/api/groups", group.GetGroups)
-	http.HandleFunc("/api/groups/get", group.GetGroup)
-	http.HandleFunc("/api/groups/create", group.CreateGroup)
-	http.HandleFunc("/api/groups/update", group.UpdateGroup)
-	http.HandleFunc("/api/groups/delete", group.DeleteGroup)
+	http.HandleFunc("/api/groups", community.GetGroups)
+	http.HandleFunc("/api/groups/get", community.GetGroup)
+	http.HandleFunc("/api/groups/create", community.CreateGroup)
+	http.HandleFunc("/api/groups/update", community.UpdateGroup)
+	http.HandleFunc("/api/groups/delete", community.DeleteGroup)
 
 	// Group membership endpoints
-	http.HandleFunc("/api/groups/members/add", group.AddUserToGroup)
-	http.HandleFunc("/api/groups/members/remove", group.RemoveUserFromGroup)
-	http.HandleFunc("/api/groups/members", group.GetGroupMembers)
-	http.HandleFunc("/api/users/groups", group.GetUserGroups)
+	http.HandleFunc("/api/groups/members/add", community.AddUserToGroup)
+	http.HandleFunc("/api/groups/members/remove", community.RemoveUserFromGroup)
+	http.HandleFunc("/api/groups/members", community.GetGroupMembers)
+	http.HandleFunc("/api/users/groups", community.GetUserGroups)
 
 	// Group messaging endpoints
-	http.HandleFunc("/api/groups/messages/send", group.SendGroupMessage)
+	http.HandleFunc("/api/groups/messages/send", community.SendGroupMessage)
 
 	// Institution endpoints
 	http.HandleFunc("/api/institutions", institution.GetInstitutions)

@@ -1,4 +1,4 @@
-package group
+package community
 
 import (
 	"database/sql"
@@ -20,7 +20,7 @@ func NewPostgresRepository(db *database.DB) Repository {
 }
 
 // Create creates a new group
-func (r *PostgresRepository) Create(group *Group) error {
+func (r *PostgresRepository) Create(group *Community) error {
 	query := `
 		INSERT INTO groups (id, name, description, is_private, created_by, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -31,18 +31,18 @@ func (r *PostgresRepository) Create(group *Group) error {
 }
 
 // FindByID finds a group by ID
-func (r *PostgresRepository) FindByID(id string) (*Group, error) {
+func (r *PostgresRepository) FindByID(id string) (*Community, error) {
 	groupUUID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, errors.New("invalid group ID format")
 	}
-	group := &Group{}
+	group := &Community{}
 	query := `SELECT id, name, description, is_private, created_by, created_at, updated_at 
 	          FROM groups WHERE id = $1`
-	
+
 	err = r.db.QueryRow(query, groupUUID).Scan(&group.ID, &group.Name, &group.Description,
 		&group.IsPrivate, &group.CreatedBy, &group.CreatedAt, &group.UpdatedAt)
-	
+
 	if err == sql.ErrNoRows {
 		return nil, errors.New("group not found")
 	}
@@ -50,19 +50,19 @@ func (r *PostgresRepository) FindByID(id string) (*Group, error) {
 }
 
 // FindAll returns all groups
-func (r *PostgresRepository) FindAll() []*Group {
+func (r *PostgresRepository) FindAll() []*Community {
 	query := `SELECT id, name, description, is_private, created_by, created_at, updated_at 
 	          FROM groups ORDER BY created_at DESC`
-	
+
 	rows, err := r.db.Query(query)
 	if err != nil {
-		return []*Group{}
+		return []*Community{}
 	}
 	defer rows.Close()
 
-	groups := []*Group{}
+	groups := []*Community{}
 	for rows.Next() {
-		group := &Group{}
+		group := &Community{}
 		if err := rows.Scan(&group.ID, &group.Name, &group.Description, &group.IsPrivate,
 			&group.CreatedBy, &group.CreatedAt, &group.UpdatedAt); err == nil {
 			groups = append(groups, group)
@@ -72,11 +72,11 @@ func (r *PostgresRepository) FindAll() []*Group {
 }
 
 // Update updates an existing group
-func (r *PostgresRepository) Update(group *Group) error {
+func (r *PostgresRepository) Update(group *Community) error {
 	query := `UPDATE groups SET name = $2, description = $3, is_private = $4, updated_at = $5 
 	          WHERE id = $1`
-	
-	result, err := r.db.Exec(query, group.ID, group.Name, group.Description, 
+
+	result, err := r.db.Exec(query, group.ID, group.Name, group.Description,
 		group.IsPrivate, group.UpdatedAt)
 	if err != nil {
 		return err
@@ -109,21 +109,21 @@ func (r *PostgresRepository) Delete(id string) error {
 }
 
 // AddUserToGroup adds a user to a group
-func (r *PostgresRepository) AddUserToGroup(userGroup *UserGroup) error {
+func (r *PostgresRepository) AddUserToGroup(userGroup *UserCommunity) error {
 	query := `INSERT INTO user_groups (user_id, group_id, role, joined_at) 
 	          VALUES ($1, $2, $3, $4)`
-	
-	_, err := r.db.Exec(query, userGroup.UserID, userGroup.GroupID, 
+
+	_, err := r.db.Exec(query, userGroup.UserID, userGroup.CommunityID,
 		userGroup.Role, userGroup.JoinedAt)
 	return err
 }
 
 // AddGroupToInstitution links a group to an institution
-func (r *PostgresRepository) AddGroupToInstitution(groupInstitution *GroupInstitution) error {
+func (r *PostgresRepository) AddGroupToInstitution(groupInstitution *CommunityInstitution) error {
 	query := `INSERT INTO group_institutions (group_id, institution_id, linked_at)
 	          VALUES ($1, $2, $3)`
 
-	_, err := r.db.Exec(query, groupInstitution.GroupID, groupInstitution.InstitutionID, groupInstitution.LinkedAt)
+	_, err := r.db.Exec(query, groupInstitution.CommunityID, groupInstitution.InstitutionID, groupInstitution.LinkedAt)
 	return err
 }
 
@@ -151,24 +151,24 @@ func (r *PostgresRepository) RemoveUserFromGroup(userID, groupID string) error {
 }
 
 // GetGroupMembers returns all members of a group
-func (r *PostgresRepository) GetGroupMembers(groupID string) ([]*UserGroup, error) {
+func (r *PostgresRepository) GetGroupMembers(groupID string) ([]*UserCommunity, error) {
 	groupUUID, err := uuid.Parse(groupID)
 	if err != nil {
 		return nil, errors.New("invalid group ID format")
 	}
 	query := `SELECT user_id, group_id, role, joined_at 
 	          FROM user_groups WHERE group_id = $1 ORDER BY joined_at`
-    
+
 	rows, err := r.db.Query(query, groupUUID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	members := []*UserGroup{}
+	members := []*UserCommunity{}
 	for rows.Next() {
-		ug := &UserGroup{}
-		if err := rows.Scan(&ug.UserID, &ug.GroupID, &ug.Role, &ug.JoinedAt); err == nil {
+		ug := &UserCommunity{}
+		if err := rows.Scan(&ug.UserID, &ug.CommunityID, &ug.Role, &ug.JoinedAt); err == nil {
 			members = append(members, ug)
 		}
 	}
@@ -176,24 +176,24 @@ func (r *PostgresRepository) GetGroupMembers(groupID string) ([]*UserGroup, erro
 }
 
 // GetUserGroups returns all groups a user belongs to
-func (r *PostgresRepository) GetUserGroups(userID string) []*UserGroup {
+func (r *PostgresRepository) GetUserGroups(userID string) []*UserCommunity {
 	userUUID, err := uuid.Parse(userID)
 	if err != nil {
-		return []*UserGroup{}
+		return []*UserCommunity{}
 	}
 	query := `SELECT user_id, group_id, role, joined_at 
 	          FROM user_groups WHERE user_id = $1 ORDER BY joined_at DESC`
-    
+
 	rows, err := r.db.Query(query, userUUID)
 	if err != nil {
-		return []*UserGroup{}
+		return []*UserCommunity{}
 	}
 	defer rows.Close()
 
-	userGroups := []*UserGroup{}
+	userGroups := []*UserCommunity{}
 	for rows.Next() {
-		ug := &UserGroup{}
-		if err := rows.Scan(&ug.UserID, &ug.GroupID, &ug.Role, &ug.JoinedAt); err == nil {
+		ug := &UserCommunity{}
+		if err := rows.Scan(&ug.UserID, &ug.CommunityID, &ug.Role, &ug.JoinedAt); err == nil {
 			userGroups = append(userGroups, ug)
 		}
 	}
@@ -240,7 +240,7 @@ func (r *PostgresRepository) GetUserRole(userID, groupID string) (string, error)
 	}
 	var role string
 	query := `SELECT role FROM user_groups WHERE user_id = $1 AND group_id = $2`
-    
+
 	err = r.db.QueryRow(query, userUUID, groupUUID).Scan(&role)
 	if err == sql.ErrNoRows {
 		return "", errors.New("user not in group")

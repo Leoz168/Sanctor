@@ -28,12 +28,12 @@ func (r *GormRepository) CreateWithLinks(post *Post, groupIDs []uuid.UUID, insti
 		}
 
 		if len(groupIDs) > 0 {
-			postGroups := make([]PostGroup, 0, len(groupIDs))
+			postGroups := make([]PostCommunity, 0, len(groupIDs))
 			for _, groupID := range groupIDs {
-				postGroups = append(postGroups, PostGroup{
-					PostID:   post.ID,
-					GroupID:  groupID,
-					LinkedAt: post.CreatedAt,
+				postGroups = append(postGroups, PostCommunity{
+					PostID:      post.ID,
+					CommunityID: groupID,
+					LinkedAt:    post.CreatedAt,
 				})
 			}
 
@@ -154,7 +154,7 @@ func (r *GormRepository) Search(filters PostSearchFilters) ([]*Post, error) {
 		query = query.Where("LOWER(property_type) = ?", strings.ToLower(pt))
 	}
 
-	if gid := strings.TrimSpace(filters.GroupID); gid != "" {
+	if gid := strings.TrimSpace(filters.CommunityID); gid != "" {
 		groupUUID, err := uuid.Parse(gid)
 		if err != nil {
 			return nil, err
