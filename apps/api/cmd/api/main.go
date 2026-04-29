@@ -208,8 +208,6 @@ func main() {
 	http.HandleFunc("/api/comments/delete", authRequired(comment.DeleteComment))
 
 	// Auth endpoints
-	http.HandleFunc("/api/auth/register", authHandler.Register)
-	http.HandleFunc("/api/auth/login", authHandler.Login)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
