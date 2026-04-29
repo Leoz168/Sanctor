@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"sanctor/internal/auth"
+	"sanctor/internal/blocking"
 	"sanctor/internal/bookmark"
 	"sanctor/internal/comment"
 	"sanctor/internal/community"
@@ -72,7 +73,7 @@ func main() {
 			defer db.Close()
 
 			// Run auto-migration for all models
-			if err := db.AutoMigrate(&user.User{}, &community.Community{}, &community.UserCommunity{}, &community.CommunityInstitution{}, &post.Post{}, &post.PostCommunity{}, &post.PostInstitution{}, &bookmark.Bookmark{}, &comment.Comment{}, &picture.Picture{}, &institution.Institution{}); err != nil {
+			if err := db.AutoMigrate(&user.User{}, &community.Community{}, &community.UserCommunity{}, &community.CommunityInstitution{}, &post.Post{}, &post.PostCommunity{}, &post.PostInstitution{}, &bookmark.Bookmark{}, &comment.Comment{}, &picture.Picture{}, &institution.Institution{}, &blocking.UserBlock{}); err != nil {
 				log.Printf("⚠️  Failed to migrate database: %v", err)
 			}
 
@@ -84,6 +85,7 @@ func main() {
 			community.InitWithDatabase(db)
 			institution.InitWithDatabase(db)
 			bookmark.InitWithDatabase(db)
+			blocking.InitWithDatabase(db)
 			comment.InitWithDatabase(db)
 			log.Println("✅ Database initialized successfully")
 		}
@@ -140,6 +142,8 @@ func main() {
 	// Health check endpoints
 	http.HandleFunc("/health", healthHandler)
 	http.HandleFunc("/api/health", healthHandler)
+	http.HandleFunc("/api/auth/register", authHandler.Register)
+	http.HandleFunc("/api/auth/login", authHandler.Login)
 
 	// User endpoints
 	http.HandleFunc("/api/users", authRequired(user.GetUsers))
@@ -147,6 +151,11 @@ func main() {
 	http.HandleFunc("/api/users/create", authRequired(authHandler.Register))
 	http.HandleFunc("/api/users/update", authRequired(user.UpdateUser))
 	http.HandleFunc("/api/users/delete", authRequired(user.DeleteUser))
+	http.HandleFunc("/api/users/blocks", authRequired(blocking.GetBlocks))
+	http.HandleFunc("/api/users/blocks/blocked-by", authRequired(blocking.GetBlockedBy))
+	http.HandleFunc("/api/users/blocks/check", authRequired(blocking.CheckBlock))
+	http.HandleFunc("/api/users/blocks/create", authRequired(blocking.CreateBlock))
+	http.HandleFunc("/api/users/blocks/delete", authRequired(blocking.DeleteBlock))
 
 	// Community endpoints
 	http.HandleFunc("/api/communities", authRequired(community.GetCommunities))
