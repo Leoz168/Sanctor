@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Community represents a group in the system
+// Community represents a community in the system
 type Community struct {
 	ID          uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
 	Name        string    `json:"name" gorm:"type:varchar(200);not null"`

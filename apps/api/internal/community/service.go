@@ -7,21 +7,21 @@ import (
 	"github.com/google/uuid"
 )
 
-// Service handles business logic for group operations
+// Service handles business logic for community operations
 type Service struct {
 	repo Repository
 }
 
-// NewService creates a new group service
+// NewService creates a new community service
 func NewService(repo Repository) *Service {
 	return &Service{repo: repo}
 }
 
-// CreateGroup creates a new group with validation
-func (s *Service) CreateGroup(req CreateCommunityRequest) (*Community, error) {
+// CreateCommunity creates a new community with validation
+func (s *Service) CreateCommunity(req CreateCommunityRequest) (*Community, error) {
 	// Validate input
 	if req.Name == "" {
-		return nil, errors.New("group name is required")
+		return nil, errors.New("community name is required")
 	}
 
 	if req.CreatedBy == "" {
@@ -41,8 +41,8 @@ func (s *Service) CreateGroup(req CreateCommunityRequest) (*Community, error) {
 		return nil, errors.New("invalid institution ID format")
 	}
 
-	// Create group
-	group := &Community{
+	// Create community
+	community := &Community{
 		ID:          uuid.New(),
 		Name:        req.Name,
 		Description: req.Description,
@@ -52,51 +52,51 @@ func (s *Service) CreateGroup(req CreateCommunityRequest) (*Community, error) {
 		UpdatedAt:   time.Now(),
 	}
 
-	if err := s.repo.Create(group); err != nil {
+	if err := s.repo.Create(community); err != nil {
 		return nil, err
 	}
 
 	// Automatically add creator as owner
-	userGroup := &UserCommunity{
+	userCommunity := &UserCommunity{
 		UserID:      creatorUUID,
-		CommunityID: group.ID,
+		CommunityID: community.ID,
 		Role:        "owner",
 		JoinedAt:    time.Now(),
 	}
 
-	if err := s.repo.AddUserToGroup(userGroup); err != nil {
-		// Rollback: delete the group if adding creator fails
-		s.repo.Delete(group.ID)
-		return nil, errors.New("failed to add creator to group")
+	if err := s.repo.AddUserToCommunity(userCommunity); err != nil {
+		// Rollback: delete the community if adding creator fails
+		s.repo.Delete(community.ID)
+		return nil, errors.New("failed to add creator to community")
 	}
 
-	groupInstitution := &CommunityInstitution{
-		CommunityID:   group.ID,
+	communityInstitution := &CommunityInstitution{
+		CommunityID:   community.ID,
 		InstitutionID: institutionUUID,
 		LinkedAt:      time.Now(),
 	}
 
-	if err := s.repo.AddGroupToInstitution(groupInstitution); err != nil {
-		// Rollback: delete the group and owner membership if institution linking fails
-		s.repo.Delete(group.ID)
-		return nil, errors.New("failed to link group to institution")
+	if err := s.repo.AddCommunityToInstitution(communityInstitution); err != nil {
+		// Rollback: delete the community and owner membership if institution linking fails
+		s.repo.Delete(community.ID)
+		return nil, errors.New("failed to link community to institution")
 	}
 
-	return group, nil
+	return community, nil
 }
 
-// GetGroup retrieves a group by ID
-func (s *Service) GetGroup(id uuid.UUID) (*Community, error) {
+// GetCommunity retrieves a community by ID
+func (s *Service) GetCommunity(id uuid.UUID) (*Community, error) {
 	if id == uuid.Nil {
-		return nil, errors.New("group ID is required")
+		return nil, errors.New("community ID is required")
 	}
 
 	return s.repo.FindByID(id)
 }
 
-// GetGroupWithMembers retrieves a group with member count
-func (s *Service) GetGroupWithMembers(id uuid.UUID) (*CommunityWithMembers, error) {
-	group, err := s.repo.FindByID(id)
+// GetCommunityWithMembers retrieves a community with member count
+func (s *Service) GetCommunityWithMembers(id uuid.UUID) (*CommunityWithMembers, error) {
+	community, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -104,69 +104,69 @@ func (s *Service) GetGroupWithMembers(id uuid.UUID) (*CommunityWithMembers, erro
 	memberCount := s.repo.GetMemberCount(id)
 
 	return &CommunityWithMembers{
-		Community:   group,
+		Community:   community,
 		MemberCount: memberCount,
 	}, nil
 }
 
-// GetAllGroups retrieves all groups
-func (s *Service) GetAllGroups() ([]*Community, error) {
+// GetAllCommunities retrieves all communities
+func (s *Service) GetAllCommunities() ([]*Community, error) {
 	return s.repo.FindAll(), nil
 }
 
-// UpdateGroup updates an existing group
-func (s *Service) UpdateGroup(id uuid.UUID, req UpdateCommunityRequest) (*Community, error) {
-	group, err := s.repo.FindByID(id)
+// UpdateCommunity updates an existing community
+func (s *Service) UpdateCommunity(id uuid.UUID, req UpdateCommunityRequest) (*Community, error) {
+	community, err := s.repo.FindByID(id)
 	if err != nil {
-		return nil, errors.New("group not found")
+		return nil, errors.New("community not found")
 	}
 
 	// Update fields if provided
 	if req.Name != "" {
-		group.Name = req.Name
+		community.Name = req.Name
 	}
 	if req.Description != "" {
-		group.Description = req.Description
+		community.Description = req.Description
 	}
 	if req.IsPrivate != nil {
-		group.IsPrivate = *req.IsPrivate
+		community.IsPrivate = *req.IsPrivate
 	}
-	group.UpdatedAt = time.Now()
+	community.UpdatedAt = time.Now()
 
-	if err := s.repo.Update(group); err != nil {
+	if err := s.repo.Update(community); err != nil {
 		return nil, err
 	}
 
-	return group, nil
+	return community, nil
 }
 
-// DeleteGroup deletes a group by ID
-func (s *Service) DeleteGroup(id uuid.UUID) error {
+// DeleteCommunity deletes a community by ID
+func (s *Service) DeleteCommunity(id uuid.UUID) error {
 	if id == uuid.Nil {
-		return errors.New("group ID is required")
+		return errors.New("community ID is required")
 	}
 
 	return s.repo.Delete(id)
 }
 
-// AddUserToGroup adds a user to a group
-func (s *Service) AddUserToGroup(req AddUserToCommunityRequest) error {
+// AddUserToCommunity adds a user to a community
+func (s *Service) AddUserToCommunity(req AddUserToCommunityRequest) error {
 	if req.UserID == "" || req.CommunityID == "" {
-		return errors.New("user ID and group ID are required")
+		return errors.New("user ID and community ID are required")
 	}
 
 	userUUID, err := uuid.Parse(req.UserID)
 	if err != nil {
 		return errors.New("invalid user ID format")
 	}
-	groupUUID, err := uuid.Parse(req.CommunityID)
+	communityUUID, err := uuid.Parse(req.CommunityID)
 	if err != nil {
-		return errors.New("invalid group ID format")
+		return errors.New("invalid community ID format")
 	}
 
-	// Validate group exists
-	if _, err := s.repo.FindByID(groupUUID); err != nil {
-		return errors.New("group not found")
+	// Validate community exists
+	if _, err := s.repo.FindByID(communityUUID); err != nil {
+		return errors.New("community not found")
 	}
 
 	// Default role to "member"
@@ -180,77 +180,77 @@ func (s *Service) AddUserToGroup(req AddUserToCommunityRequest) error {
 		return errors.New("invalid role: must be member, admin, or owner")
 	}
 
-	userGroup := &UserCommunity{
+	userCommunity := &UserCommunity{
 		UserID:      userUUID,
-		CommunityID: groupUUID,
+		CommunityID: communityUUID,
 		Role:        role,
 		JoinedAt:    time.Now(),
 	}
 
-	return s.repo.AddUserToGroup(userGroup)
+	return s.repo.AddUserToCommunity(userCommunity)
 }
 
-// RemoveUserFromGroup removes a user from a group
-func (s *Service) RemoveUserFromGroup(userID, groupID uuid.UUID) error {
-	if userID == uuid.Nil || groupID == uuid.Nil {
-		return errors.New("user ID and group ID are required")
+// RemoveUserFromCommunity removes a user from a community
+func (s *Service) RemoveUserFromCommunity(userID, communityID uuid.UUID) error {
+	if userID == uuid.Nil || communityID == uuid.Nil {
+		return errors.New("user ID and community ID are required")
 	}
 
 	// Check if user is the owner
-	role, err := s.repo.GetUserRole(userID, groupID)
+	role, err := s.repo.GetUserRole(userID, communityID)
 	if err != nil {
 		return err
 	}
 
 	if role == "owner" {
 		// Check if there are other members
-		members, _ := s.repo.GetGroupMembers(groupID)
+		members, _ := s.repo.GetCommunityMembers(communityID)
 		if len(members) > 1 {
-			return errors.New("owner cannot leave group with other members. Transfer ownership first or delete the group")
+			return errors.New("owner cannot leave community with other members. Transfer ownership first or delete the community")
 		}
 	}
 
-	return s.repo.RemoveUserFromGroup(userID, groupID)
+	return s.repo.RemoveUserFromCommunity(userID, communityID)
 }
 
-// GetGroupMembers returns all members of a group
-func (s *Service) GetGroupMembers(groupID uuid.UUID) ([]*UserCommunityInfo, error) {
-	if groupID == uuid.Nil {
-		return nil, errors.New("group ID is required")
+// GetCommunityMembers returns all members of a community
+func (s *Service) GetCommunityMembers(communityID uuid.UUID) ([]*UserCommunityInfo, error) {
+	if communityID == uuid.Nil {
+		return nil, errors.New("community ID is required")
 	}
 
-	userGroups, err := s.repo.GetGroupMembers(groupID)
+	userCommunities, err := s.repo.GetCommunityMembers(communityID)
 	if err != nil {
 		return nil, err
 	}
 
-	members := make([]*UserCommunityInfo, len(userGroups))
-	for i, ug := range userGroups {
+	members := make([]*UserCommunityInfo, len(userCommunities))
+	for i, uc := range userCommunities {
 		members[i] = &UserCommunityInfo{
-			UserID:   ug.UserID,
-			Role:     ug.Role,
-			JoinedAt: ug.JoinedAt,
+			UserID:   uc.UserID,
+			Role:     uc.Role,
+			JoinedAt: uc.JoinedAt,
 		}
 	}
 
 	return members, nil
 }
 
-// GetUserGroups returns all groups a user belongs to
-func (s *Service) GetUserGroups(userID uuid.UUID) ([]*UserCommunity, error) {
+// GetUserCommunities returns all communities a user belongs to
+func (s *Service) GetUserCommunities(userID uuid.UUID) ([]*UserCommunity, error) {
 	if userID == uuid.Nil {
 		return nil, errors.New("user ID is required")
 	}
 
-	return s.repo.GetUserGroups(userID), nil
+	return s.repo.GetUserCommunities(userID), nil
 }
 
-// IsUserInGroup checks if a user is a member of a group
-func (s *Service) IsUserInGroup(userID, groupID uuid.UUID) bool {
-	return s.repo.IsUserInGroup(userID, groupID)
+// IsUserInCommunity checks if a user is a member of a community
+func (s *Service) IsUserInCommunity(userID, communityID uuid.UUID) bool {
+	return s.repo.IsUserInCommunity(userID, communityID)
 }
 
-// GetUserRole returns a user's role in a group
-func (s *Service) GetUserRole(userID, groupID uuid.UUID) (string, error) {
-	return s.repo.GetUserRole(userID, groupID)
+// GetUserRole returns a user's role in a community
+func (s *Service) GetUserRole(userID, communityID uuid.UUID) (string, error) {
+	return s.repo.GetUserRole(userID, communityID)
 }

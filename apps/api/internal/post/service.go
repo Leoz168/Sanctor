@@ -19,7 +19,7 @@ type PostRepository interface {
 	FindByID(id uuid.UUID) (*Post, error)
 	FindAll() ([]*Post, error)
 	Search(filters PostSearchFilters) ([]*Post, error)
-	CreateWithLinks(post *Post, groupIDs []uuid.UUID, institutionIDs []uuid.UUID) (*Post, error)
+	CreateWithLinks(post *Post, communityIDs []uuid.UUID, institutionIDs []uuid.UUID) (*Post, error)
 	Update(post *Post) error
 	Delete(id uuid.UUID) error
 }

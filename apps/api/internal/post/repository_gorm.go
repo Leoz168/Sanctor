@@ -21,23 +21,23 @@ func NewGormRepository(db *database.DB) *GormRepository {
 }
 
 // Create adds a new post
-func (r *GormRepository) CreateWithLinks(post *Post, groupIDs []uuid.UUID, institutionIDs []uuid.UUID) (*Post, error) {
+func (r *GormRepository) CreateWithLinks(post *Post, communityIDs []uuid.UUID, institutionIDs []uuid.UUID) (*Post, error) {
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(post).Error; err != nil {
 			return err
 		}
 
-		if len(groupIDs) > 0 {
-			postGroups := make([]PostCommunity, 0, len(groupIDs))
-			for _, groupID := range groupIDs {
-				postGroups = append(postGroups, PostCommunity{
+		if len(communityIDs) > 0 {
+			postCommunities := make([]PostCommunity, 0, len(communityIDs))
+			for _, communityID := range communityIDs {
+				postCommunities = append(postCommunities, PostCommunity{
 					PostID:      post.ID,
-					CommunityID: groupID,
+					CommunityID: communityID,
 					LinkedAt:    post.CreatedAt,
 				})
 			}
 
-			if err := tx.Create(&postGroups).Error; err != nil {
+			if err := tx.Create(&postCommunities).Error; err != nil {
 				return err
 			}
 		}
@@ -147,11 +147,11 @@ func (r *GormRepository) Search(filters PostSearchFilters) ([]*Post, error) {
 	}
 
 	if gid := strings.TrimSpace(filters.CommunityID); gid != "" {
-		groupUUID, err := uuid.Parse(gid)
+		communityUUID, err := uuid.Parse(gid)
 		if err != nil {
 			return nil, err
 		}
-		query = query.Joins("JOIN post_groups ON post_groups.post_id = posts.id").Where("post_groups.group_id = ?", groupUUID)
+		query = query.Joins("JOIN post_communities ON post_communities.post_id = posts.id").Where("post_communities.community_id = ?", communityUUID)
 	}
 	if iid := strings.TrimSpace(filters.InstitutionID); iid != "" {
 		institutionUUID, err := uuid.Parse(iid)
