@@ -130,25 +130,23 @@ func (s *Service) CreatePost(req *CreatePostRequest) (*Post, error) {
 	if s.eventPublisher != nil {
 		event := events.PostCreatedEvent{
 			BaseEvent: events.BaseEvent{
-				EventID:   uuid.NewString(),
+				EventID:   uuid.New(),
 				Timestamp: time.Now(),
 				EventType: events.EventTypePostCreated,
 			},
-			PostID:        createdPost.ID.String(),
-			AuthorID:      createdPost.UserID.String(),
-			InstitutionID: "",
-			CommunityID:   "",
-			Price:         float64(createdPost.Price),
-			Gender:        createdPost.Gender,
+			PostID:   createdPost.ID,
+			AuthorID: createdPost.UserID,
+			Price:    createdPost.Price,
+			Gender:   createdPost.Gender,
 		}
 		if len(institutionIDs) > 0 {
-			event.InstitutionID = institutionIDs[0].String()
+			event.InstitutionIDs = institutionIDs
 		}
 		if len(communityIDs) > 0 {
-			event.CommunityID = communityIDs[0].String()
+			event.CommunityID = communityIDs[0]
 		}
 		if err := s.eventPublisher.PublishPostCreated(context.Background(), event); err != nil {
-			return nil, err
+			fmt.Printf("failed to publish post created event for post %s: %v\n", createdPost.ID.String(), err)
 		}
 	}
 
@@ -208,11 +206,11 @@ func (s *Service) GetPost(id uuid.UUID) (*Post, error) {
 	if s.eventPublisher != nil {
 		event := events.PostViewedEvent{
 			BaseEvent: events.BaseEvent{
-				EventID:   uuid.NewString(),
+				EventID:   uuid.New(),
 				Timestamp: time.Now(),
 				EventType: events.EventTypePostViewed,
 			},
-			PostID: post.ID.String(),
+			PostID: post.ID,
 		}
 
 		if err := s.eventPublisher.PublishPostViewed(context.Background(), event); err != nil {
@@ -369,17 +367,17 @@ func (s *Service) UpdatePost(id uuid.UUID, req UpdatePostRequest, userID uuid.UU
 		if len(updatedFields) > 0 {
 			event := events.PostUpdatedEvent{
 				BaseEvent: events.BaseEvent{
-					EventID:   uuid.NewString(),
+					EventID:   uuid.New(),
 					Timestamp: time.Now(),
 					EventType: events.EventTypePostUpdated,
 				},
-				PostID:        post.ID.String(),
-				AuthorID:      userID.String(),
+				PostID:        post.ID,
+				AuthorID:      userID,
 				UpdatedFields: updatedFields,
 			}
 
 			if err := s.eventPublisher.PublishPostUpdated(context.Background(), event); err != nil {
-				return nil, err
+				fmt.Printf("failed to publish post updated event: %v\n", err)
 			}
 		}
 	}
@@ -408,16 +406,16 @@ func (s *Service) DeletePost(id uuid.UUID) error {
 	if s.eventPublisher != nil {
 		event := events.PostDeletedEvent{
 			BaseEvent: events.BaseEvent{
-				EventID:   uuid.NewString(),
+				EventID:   uuid.New(),
 				Timestamp: time.Now(),
 				EventType: events.EventTypePostDeleted,
 			},
-			PostID:   post.ID.String(),
-			AuthorID: post.UserID.String(),
+			PostID:   post.ID,
+			AuthorID: post.UserID,
 		}
 
 		if err := s.eventPublisher.PublishPostDeleted(context.Background(), event); err != nil {
-			return err
+			fmt.Printf("failed to publish post deleted event: %v\n", err)
 		}
 	}
 
