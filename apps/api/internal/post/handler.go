@@ -166,7 +166,7 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdPost, err := h.service.CreatePost(&req)
+	createdPost, err := h.service.CreatePost(r.Context(), &req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -192,7 +192,7 @@ func (h *Handler) GetPost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid post ID format", http.StatusBadRequest)
 		return
 	}
-	post, err := h.service.GetPost(postID)
+	post, err := h.service.GetPost(r.Context(), postID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -240,7 +240,7 @@ func (h *Handler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update the UpdatePost call to handle both return values
-	updatedPost, err := h.service.UpdatePost(postID, req, userUUID, userRole)
+	updatedPost, err := h.service.UpdatePost(r.Context(), postID, req, userUUID, userRole)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
@@ -279,7 +279,7 @@ func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid post ID format", http.StatusBadRequest)
 		return
 	}
-	if err := h.service.DeletePost(postID); err != nil {
+	if err := h.service.DeletePost(r.Context(), postID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

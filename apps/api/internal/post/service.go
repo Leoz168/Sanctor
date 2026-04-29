@@ -63,7 +63,7 @@ func validatePostInput(post *Post) error {
 }
 
 // CreatePost creates a new post
-func (s *Service) CreatePost(req *CreatePostRequest) (*Post, error) {
+func (s *Service) CreatePost(ctx context.Context, req *CreatePostRequest) (*Post, error) {
 	if req.UserID == "" {
 		return nil, errors.New("userId is required")
 	}
@@ -145,7 +145,7 @@ func (s *Service) CreatePost(req *CreatePostRequest) (*Post, error) {
 		if len(communityIDs) > 0 {
 			event.CommunityID = communityIDs[0]
 		}
-		if err := s.eventPublisher.PublishPostCreated(context.Background(), event); err != nil {
+		if err := s.eventPublisher.PublishPostCreated(ctx, event); err != nil {
 			fmt.Printf("failed to publish post created event for post %s: %v\n", createdPost.ID.String(), err)
 		}
 	}
@@ -190,7 +190,7 @@ func uniqueIDs(ids []string) []string {
 }
 
 // GetPost retrieves a post by ID
-func (s *Service) GetPost(id uuid.UUID) (*Post, error) {
+func (s *Service) GetPost(ctx context.Context, id uuid.UUID) (*Post, error) {
 	if s.repo == nil {
 		return nil, fmt.Errorf("repository not initialized")
 	}
@@ -213,7 +213,7 @@ func (s *Service) GetPost(id uuid.UUID) (*Post, error) {
 			PostID: post.ID,
 		}
 
-		if err := s.eventPublisher.PublishPostViewed(context.Background(), event); err != nil {
+		if err := s.eventPublisher.PublishPostViewed(ctx, event); err != nil {
 			return nil, err
 		}
 	}
@@ -252,7 +252,7 @@ func (s *Service) SearchPosts(filters PostSearchFilters) ([]*Post, error) {
 }
 
 // UpdatePost updates an existing post
-func (s *Service) UpdatePost(id uuid.UUID, req UpdatePostRequest, userID uuid.UUID, userRole string) (*Post, error) {
+func (s *Service) UpdatePost(ctx context.Context, id uuid.UUID, req UpdatePostRequest, userID uuid.UUID, userRole string) (*Post, error) {
 	if s.repo == nil {
 		return nil, fmt.Errorf("repository not initialized")
 	}
@@ -376,7 +376,7 @@ func (s *Service) UpdatePost(id uuid.UUID, req UpdatePostRequest, userID uuid.UU
 				UpdatedFields: updatedFields,
 			}
 
-			if err := s.eventPublisher.PublishPostUpdated(context.Background(), event); err != nil {
+			if err := s.eventPublisher.PublishPostUpdated(ctx, event); err != nil {
 				fmt.Printf("failed to publish post updated event: %v\n", err)
 			}
 		}
@@ -386,7 +386,7 @@ func (s *Service) UpdatePost(id uuid.UUID, req UpdatePostRequest, userID uuid.UU
 }
 
 // DeletePost deletes a post
-func (s *Service) DeletePost(id uuid.UUID) error {
+func (s *Service) DeletePost(ctx context.Context, id uuid.UUID) error {
 	if s.repo == nil {
 		return fmt.Errorf("repository not initialized")
 	}
@@ -414,7 +414,7 @@ func (s *Service) DeletePost(id uuid.UUID) error {
 			AuthorID: post.UserID,
 		}
 
-		if err := s.eventPublisher.PublishPostDeleted(context.Background(), event); err != nil {
+		if err := s.eventPublisher.PublishPostDeleted(ctx, event); err != nil {
 			fmt.Printf("failed to publish post deleted event: %v\n", err)
 		}
 	}
