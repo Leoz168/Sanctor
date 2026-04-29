@@ -147,20 +147,20 @@ func main() {
 	http.HandleFunc("/api/users/delete", authRequired(user.DeleteUser))
 
 	// Community endpoints
-	http.HandleFunc("/api/communities", authRequired(community.GetGroups))
-	http.HandleFunc("/api/communities/get", authRequired(community.GetGroup))
-	http.HandleFunc("/api/communities/create", authRequired(community.CreateGroup))
-	http.HandleFunc("/api/communities/update", authRequired(community.UpdateGroup))
-	http.HandleFunc("/api/communities/delete", authRequired(community.DeleteGroup))
+	http.HandleFunc("/api/communities", authRequired(community.GetCommunities))
+	http.HandleFunc("/api/communities/get", authRequired(community.GetCommunity))
+	http.HandleFunc("/api/communities/create", authRequired(community.CreateCommunity))
+	http.HandleFunc("/api/communities/update", authRequired(community.UpdateCommunity))
+	http.HandleFunc("/api/communities/delete", authRequired(community.DeleteCommunity))
 
 	// Community membership endpoints
-	http.HandleFunc("/api/communities/members/add", authRequired(community.AddUserToGroup))
-	http.HandleFunc("/api/communities/members/remove", authRequired(community.RemoveUserFromGroup))
-	http.HandleFunc("/api/communities/members", authRequired(community.GetGroupMembers))
-	http.HandleFunc("/api/users/communities", authRequired(community.GetUserGroups))
+	http.HandleFunc("/api/communities/members/add", authRequired(community.AddUserToCommunity))
+	http.HandleFunc("/api/communities/members/remove", authRequired(community.RemoveUserFromCommunity))
+	http.HandleFunc("/api/communities/members", authRequired(community.GetCommunityMembers))
+	http.HandleFunc("/api/users/communities", authRequired(community.GetUserCommunities))
 
 	// Community messaging endpoints
-	http.HandleFunc("/api/communities/messages/send", authRequired(community.SendGroupMessage))
+	http.HandleFunc("/api/communities/messages/send", authRequired(community.SendCommunityMessage))
 
 	// DM endpoints
 	http.HandleFunc("/api/dm/groups/direct", authRequired(dm.CreateDirectGroup))

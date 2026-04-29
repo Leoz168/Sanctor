@@ -7,32 +7,32 @@ import (
 	"github.com/google/uuid"
 )
 
-// Message represents a message in a group
-type Message struct {
-	ID        string    `json:"id"`
-	GroupID   string    `json:"groupId"`
-	UserID    string    `json:"userId"`
-	Content   string    `json:"content"`
-	Type      string    `json:"type"` // "text", "notification", "system"
-	Timestamp time.Time `json:"timestamp"`
+// CommunityMessage represents a message in a community
+type CommunityMessage struct {
+	ID          string    `json:"id"`
+	CommunityID string    `json:"groupId"`
+	UserID      string    `json:"userId"`
+	Content     string    `json:"content"`
+	Type        string    `json:"type"` // "text", "notification", "system"
+	Timestamp   time.Time `json:"timestamp"`
 }
 
-// GroupEvent represents events that happen in groups
-type GroupEvent struct {
-	Type      string      `json:"type"` // "user_joined", "user_left", "message", "group_updated", "group_deleted"
-	GroupID   string      `json:"groupId"`
-	UserID    string      `json:"userId,omitempty"`
-	Data      interface{} `json:"data,omitempty"`
-	Timestamp time.Time   `json:"timestamp"`
+// CommunityEvent represents events that happen in communities
+type CommunityEvent struct {
+	Type        string      `json:"type"` // "user_joined", "user_left", "message", "group_updated", "group_deleted"
+	CommunityID string      `json:"groupId"`
+	UserID      string      `json:"userId,omitempty"`
+	Data        interface{} `json:"data,omitempty"`
+	Timestamp   time.Time   `json:"timestamp"`
 }
 
-// Messaging handles group messaging and notifications
+// Messaging handles community messaging and notifications
 type Messaging struct {
 	pubsub  *pubsub.PubSub
 	service *Service
 }
 
-// NewMessaging creates a new group messaging instance
+// NewMessaging creates a new community messaging instance
 func NewMessaging(ps *pubsub.PubSub, svc *Service) *Messaging {
 	return &Messaging{
 		pubsub:  ps,
@@ -40,18 +40,18 @@ func NewMessaging(ps *pubsub.PubSub, svc *Service) *Messaging {
 	}
 }
 
-// SendMessage sends a message to a group
-func (m *Messaging) SendMessage(msg *Message) error {
-	// Verify user is in group
+// SendCommunityMessage sends a message to a community
+func (m *Messaging) SendCommunityMessage(msg *CommunityMessage) error {
+	// Verify user is in community
 	userID, err := uuid.Parse(msg.UserID)
 	if err != nil {
 		return ErrNotMember
 	}
-	groupID, err := uuid.Parse(msg.GroupID)
+	communityID, err := uuid.Parse(msg.CommunityID)
 	if err != nil {
 		return ErrNotMember
 	}
-	if !m.service.IsUserInGroup(userID, groupID) {
+	if !m.service.IsUserInCommunity(userID, communityID) {
 		return ErrNotMember
 	}
 
@@ -60,80 +60,80 @@ func (m *Messaging) SendMessage(msg *Message) error {
 		msg.Timestamp = time.Now()
 	}
 
-	// Publish to group topic
-	topic := "group:" + msg.GroupID
+	// Publish to group topic (legacy naming)
+	topic := "group:" + msg.CommunityID
 	m.pubsub.Publish(topic, msg)
 
 	return nil
 }
 
-// PublishEvent publishes a group event
-func (m *Messaging) PublishEvent(event *GroupEvent) {
+// PublishEvent publishes a community event
+func (m *Messaging) PublishEvent(event *CommunityEvent) {
 	if event.Timestamp.IsZero() {
 		event.Timestamp = time.Now()
 	}
 
-	// Publish to group-specific topic
-	groupTopic := "group:" + event.GroupID
-	m.pubsub.Publish(groupTopic, event)
+	// Publish to group-specific topic (legacy naming)
+	communityTopic := "group:" + event.CommunityID
+	m.pubsub.Publish(communityTopic, event)
 
-	// Also publish to global group events topic
+	// Also publish to global group events topic (legacy naming)
 	m.pubsub.Publish("group:events", event)
 }
 
-// SubscribeToGroup subscribes to all messages in a group
-func (m *Messaging) SubscribeToGroup(groupID string) (<-chan interface{}, error) {
+// SubscribeToCommunity subscribes to all messages in a community
+func (m *Messaging) SubscribeToCommunity(communityID string) (<-chan interface{}, error) {
 	// Could add permission check here
-	topic := "group:" + groupID
+	topic := "group:" + communityID
 	return m.pubsub.Subscribe(topic), nil
 }
 
-// SubscribeToAllGroupEvents subscribes to all group events
-func (m *Messaging) SubscribeToAllGroupEvents() <-chan interface{} {
+// SubscribeToAllCommunityEvents subscribes to all community events
+func (m *Messaging) SubscribeToAllCommunityEvents() <-chan interface{} {
 	return m.pubsub.Subscribe("group:events")
 }
 
-// UnsubscribeFromGroup unsubscribes from a group
-func (m *Messaging) UnsubscribeFromGroup(groupID string, ch <-chan interface{}) {
-	topic := "group:" + groupID
+// UnsubscribeFromCommunity unsubscribes from a community
+func (m *Messaging) UnsubscribeFromCommunity(communityID string, ch <-chan interface{}) {
+	topic := "group:" + communityID
 	m.pubsub.Unsubscribe(topic, ch)
 }
 
-// NotifyUserJoined sends a notification when a user joins a group
-func (m *Messaging) NotifyUserJoined(groupID, userID string) {
-	event := &GroupEvent{
+// NotifyUserJoined sends a notification when a user joins a community
+func (m *Messaging) NotifyUserJoined(communityID, userID string) {
+	event := &CommunityEvent{
 		Type:    "user_joined",
-		GroupID: groupID,
+		CommunityID: communityID,
 		UserID:  userID,
 	}
 	m.PublishEvent(event)
 }
 
-// NotifyUserLeft sends a notification when a user leaves a group
-func (m *Messaging) NotifyUserLeft(groupID, userID string) {
-	event := &GroupEvent{
+// NotifyUserLeft sends a notification when a user leaves a community
+func (m *Messaging) NotifyUserLeft(communityID, userID string) {
+	event := &CommunityEvent{
 		Type:    "user_left",
-		GroupID: groupID,
+		CommunityID: communityID,
 		UserID:  userID,
 	}
 	m.PublishEvent(event)
 }
 
-// NotifyGroupUpdated sends a notification when a group is updated
-func (m *Messaging) NotifyGroupUpdated(group *Community) {
-	event := &GroupEvent{
+// NotifyCommunityUpdated sends a notification when a community is updated
+func (m *Messaging) NotifyCommunityUpdated(community *Community) {
+	event := &CommunityEvent{
 		Type:    "group_updated",
-		GroupID: group.ID.String(),
-		Data:    group,
+		CommunityID: community.ID.String(),
+		Data:    community,
 	}
 	m.PublishEvent(event)
 }
 
-// NotifyGroupDeleted sends a notification when a group is deleted
-func (m *Messaging) NotifyGroupDeleted(groupID string) {
-	event := &GroupEvent{
+// NotifyCommunityDeleted sends a notification when a community is deleted
+func (m *Messaging) NotifyCommunityDeleted(communityID string) {
+	event := &CommunityEvent{
 		Type:    "group_deleted",
-		GroupID: groupID,
+		CommunityID: communityID,
 	}
 	m.PublishEvent(event)
 }

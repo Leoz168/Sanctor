@@ -15,7 +15,7 @@ type PostRepository interface {
 	FindByID(id uuid.UUID) (*Post, error)
 	FindAll() ([]*Post, error)
 	Search(filters PostSearchFilters) ([]*Post, error)
-	CreateWithLinks(post *Post, groupIDs []uuid.UUID, institutionIDs []uuid.UUID) (*Post, error)
+	CreateWithLinks(post *Post, communityIDs []uuid.UUID, institutionIDs []uuid.UUID) (*Post, error)
 	Update(post *Post) error
 	Delete(id uuid.UUID) error
 }
@@ -106,7 +106,7 @@ func (s *Service) CreatePost(req *CreatePostRequest) (*Post, error) {
 	post.CreatedAt = time.Now()
 	post.UpdatedAt = time.Now()
 
-	groupIDs, err := parseUUIDs(uniqueIDs(req.CommunityIDs))
+	communityIDs, err := parseUUIDs(uniqueIDs(req.CommunityIDs))
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (s *Service) CreatePost(req *CreatePostRequest) (*Post, error) {
 		return nil, err
 	}
 
-	return s.repo.CreateWithLinks(post, groupIDs, institutionIDs)
+	return s.repo.CreateWithLinks(post, communityIDs, institutionIDs)
 }
 
 func parseUUIDs(ids []string) ([]uuid.UUID, error) {

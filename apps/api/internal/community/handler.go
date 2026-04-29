@@ -18,15 +18,15 @@ var (
 	messaging            = NewMessaging(ps, service)
 )
 
-// InitWithDatabase initializes the group module with a database connection
+// InitWithDatabase initializes the community module with a database connection
 func InitWithDatabase(db *database.DB) {
 	repo = NewPostgresRepository(db)
 	service = NewService(repo)
 	messaging = NewMessaging(ps, service)
 }
 
-// GetGroups returns all groups
-func GetGroups(w http.ResponseWriter, r *http.Request) {
+// GetCommunities returns all communities
+func GetCommunities(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
@@ -35,17 +35,17 @@ func GetGroups(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	groups, err := service.GetAllGroups()
+	communities, err := service.GetAllCommunities()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(groups)
+	json.NewEncoder(w).Encode(communities)
 }
 
-// GetGroup returns a single group by ID
-func GetGroup(w http.ResponseWriter, r *http.Request) {
+// GetCommunity returns a single community by ID
+func GetCommunity(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
@@ -56,27 +56,27 @@ func GetGroup(w http.ResponseWriter, r *http.Request) {
 
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		http.Error(w, "Group ID is required", http.StatusBadRequest)
+		http.Error(w, "Community ID is required", http.StatusBadRequest)
 		return
 	}
 
-	groupID, err := uuid.Parse(id)
+	communityID, err := uuid.Parse(id)
 	if err != nil {
-		http.Error(w, "Invalid group ID format", http.StatusBadRequest)
+		http.Error(w, "Invalid community ID format", http.StatusBadRequest)
 		return
 	}
 
-	group, err := service.GetGroupWithMembers(groupID)
+	community, err := service.GetCommunityWithMembers(communityID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	json.NewEncoder(w).Encode(group)
+	json.NewEncoder(w).Encode(community)
 }
 
-// CreateGroup creates a new group
-func CreateGroup(w http.ResponseWriter, r *http.Request) {
+// CreateCommunity creates a new community
+func CreateCommunity(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
@@ -96,18 +96,18 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group, err := service.CreateGroup(req)
+	community, err := service.CreateCommunity(req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(group)
+	json.NewEncoder(w).Encode(community)
 }
 
-// UpdateGroup updates an existing group
-func UpdateGroup(w http.ResponseWriter, r *http.Request) {
+// UpdateCommunity updates an existing community
+func UpdateCommunity(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
@@ -123,7 +123,7 @@ func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		http.Error(w, "Group ID is required", http.StatusBadRequest)
+		http.Error(w, "Community ID is required", http.StatusBadRequest)
 		return
 	}
 
@@ -133,26 +133,26 @@ func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupID, err := uuid.Parse(id)
+	communityID, err := uuid.Parse(id)
 	if err != nil {
-		http.Error(w, "Invalid group ID format", http.StatusBadRequest)
+		http.Error(w, "Invalid community ID format", http.StatusBadRequest)
 		return
 	}
 
-	group, err := service.UpdateGroup(groupID, req)
+	community, err := service.UpdateCommunity(communityID, req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	// Notify group members of the update
-	messaging.NotifyGroupUpdated(group)
+	// Notify community members of the update
+	messaging.NotifyCommunityUpdated(community)
 
-	json.NewEncoder(w).Encode(group)
+	json.NewEncoder(w).Encode(community)
 }
 
-// DeleteGroup deletes a group
-func DeleteGroup(w http.ResponseWriter, r *http.Request) {
+// DeleteCommunity deletes a community
+func DeleteCommunity(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
@@ -166,29 +166,29 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		http.Error(w, "Group ID is required", http.StatusBadRequest)
+		http.Error(w, "Community ID is required", http.StatusBadRequest)
 		return
 	}
 
-	groupID, err := uuid.Parse(id)
+	communityID, err := uuid.Parse(id)
 	if err != nil {
-		http.Error(w, "Invalid group ID format", http.StatusBadRequest)
+		http.Error(w, "Invalid community ID format", http.StatusBadRequest)
 		return
 	}
 
-	if err := service.DeleteGroup(groupID); err != nil {
+	if err := service.DeleteCommunity(communityID); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	// Notify that group was deleted
-	messaging.NotifyGroupDeleted(id)
+	// Notify that community was deleted
+	messaging.NotifyCommunityDeleted(id)
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// AddUserToGroup adds a user to a group
-func AddUserToGroup(w http.ResponseWriter, r *http.Request) {
+// AddUserToCommunity adds a user to a community
+func AddUserToCommunity(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
@@ -208,20 +208,20 @@ func AddUserToGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := service.AddUserToGroup(req); err != nil {
+	if err := service.AddUserToCommunity(req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Notify group members
+	// Notify community members
 	messaging.NotifyUserJoined(req.CommunityID, req.UserID)
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "User added to group successfully"})
+	json.NewEncoder(w).Encode(map[string]string{"message": "User added to community successfully"})
 }
 
-// RemoveUserFromGroup removes a user from a group
-func RemoveUserFromGroup(w http.ResponseWriter, r *http.Request) {
+// RemoveUserFromCommunity removes a user from a community
+func RemoveUserFromCommunity(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
@@ -234,10 +234,10 @@ func RemoveUserFromGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := r.URL.Query().Get("userId")
-	groupID := r.URL.Query().Get("groupId")
+	communityID := r.URL.Query().Get("groupId")
 
-	if userID == "" || groupID == "" {
-		http.Error(w, "User ID and Group ID are required", http.StatusBadRequest)
+	if userID == "" || communityID == "" {
+		http.Error(w, "userId and groupId are required", http.StatusBadRequest)
 		return
 	}
 
@@ -246,25 +246,25 @@ func RemoveUserFromGroup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
 		return
 	}
-	groupUUID, err := uuid.Parse(groupID)
+	communityUUID, err := uuid.Parse(communityID)
 	if err != nil {
-		http.Error(w, "Invalid group ID format", http.StatusBadRequest)
+		http.Error(w, "Invalid groupId format", http.StatusBadRequest)
 		return
 	}
 
-	if err := service.RemoveUserFromGroup(userUUID, groupUUID); err != nil {
+	if err := service.RemoveUserFromCommunity(userUUID, communityUUID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Notify group members
-	messaging.NotifyUserLeft(groupID, userID)
+	// Notify community members
+	messaging.NotifyUserLeft(communityID, userID)
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// GetGroupMembers returns all members of a group
-func GetGroupMembers(w http.ResponseWriter, r *http.Request) {
+// GetCommunityMembers returns all members of a community
+func GetCommunityMembers(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
@@ -273,19 +273,19 @@ func GetGroupMembers(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	groupID := r.URL.Query().Get("groupId")
-	if groupID == "" {
-		http.Error(w, "Group ID is required", http.StatusBadRequest)
+	communityID := r.URL.Query().Get("groupId")
+	if communityID == "" {
+		http.Error(w, "groupId is required", http.StatusBadRequest)
 		return
 	}
 
-	groupUUID, err := uuid.Parse(groupID)
+	communityUUID, err := uuid.Parse(communityID)
 	if err != nil {
-		http.Error(w, "Invalid group ID format", http.StatusBadRequest)
+		http.Error(w, "Invalid groupId format", http.StatusBadRequest)
 		return
 	}
 
-	members, err := service.GetGroupMembers(groupUUID)
+	members, err := service.GetCommunityMembers(communityUUID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -294,8 +294,8 @@ func GetGroupMembers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(members)
 }
 
-// GetUserGroups returns all groups a user belongs to
-func GetUserGroups(w http.ResponseWriter, r *http.Request) {
+// GetUserCommunities returns all communities a user belongs to
+func GetUserCommunities(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
@@ -316,17 +316,17 @@ func GetUserGroups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups, err := service.GetUserGroups(userUUID)
+	communities, err := service.GetUserCommunities(userUUID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	json.NewEncoder(w).Encode(groups)
+	json.NewEncoder(w).Encode(communities)
 }
 
-// SendGroupMessage sends a message to a group
-func SendGroupMessage(w http.ResponseWriter, r *http.Request) {
+// SendCommunityMessage sends a message to a community
+func SendCommunityMessage(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
@@ -341,7 +341,7 @@ func SendGroupMessage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var req struct {
-		GroupID string `json:"groupId"`
+		CommunityID string `json:"groupId"`
 		UserID  string `json:"userId"`
 		Content string `json:"content"`
 		Type    string `json:"type,omitempty"` // defaults to "text"
@@ -352,7 +352,7 @@ func SendGroupMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.GroupID == "" || req.UserID == "" || req.Content == "" {
+	if req.CommunityID == "" || req.UserID == "" || req.Content == "" {
 		http.Error(w, "groupId, userId, and content are required", http.StatusBadRequest)
 		return
 	}
@@ -363,15 +363,15 @@ func SendGroupMessage(w http.ResponseWriter, r *http.Request) {
 		msgType = "text"
 	}
 
-	msg := &Message{
-		ID:      uuid.New().String(),
-		GroupID: req.GroupID,
-		UserID:  req.UserID,
-		Content: req.Content,
-		Type:    msgType,
+	msg := &CommunityMessage{
+		ID:          uuid.New().String(),
+		CommunityID: req.CommunityID,
+		UserID:      req.UserID,
+		Content:     req.Content,
+		Type:        msgType,
 	}
 
-	if err := messaging.SendMessage(msg); err != nil {
+	if err := messaging.SendCommunityMessage(msg); err != nil {
 		if err == ErrNotMember {
 			http.Error(w, err.Error(), http.StatusForbidden)
 		} else {
