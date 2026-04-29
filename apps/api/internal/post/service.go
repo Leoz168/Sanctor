@@ -6,6 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	"context"
+
+	"sanctor/internal/events"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -22,12 +26,16 @@ type PostRepository interface {
 
 // Service handles business logic for posts
 type Service struct {
-	repo PostRepository
+	repo           PostRepository
+	eventPublisher events.EventPublisher
 }
 
 // NewService creates a new post service
-func NewService(repo PostRepository) *Service {
-	return &Service{repo: repo}
+func NewService(repo PostRepository, eventPublisher events.EventPublisher) *Service {
+	return &Service{
+		repo:           repo,
+		eventPublisher: eventPublisher,
+	}
 }
 
 // validatePostInput validates the required fields for a post
@@ -115,7 +123,34 @@ func (s *Service) CreatePost(req *CreatePostRequest) (*Post, error) {
 		return nil, err
 	}
 
-	return s.repo.CreateWithLinks(post, communityIDs, institutionIDs)
+	createdPost, err := s.repo.CreateWithLinks(post, communityIDs, institutionIDs)
+	if err != nil {
+		return nil, err
+	}
+	if s.eventPublisher != nil {
+		event := events.PostCreatedEvent{
+			BaseEvent: events.BaseEvent{
+				EventID:   uuid.New(),
+				Timestamp: time.Now(),
+				EventType: events.EventTypePostCreated,
+			},
+			PostID:   createdPost.ID,
+			AuthorID: createdPost.UserID,
+			Price:    createdPost.Price,
+			Gender:   createdPost.Gender,
+		}
+		if len(institutionIDs) > 0 {
+			event.InstitutionIDs = institutionIDs
+		}
+		if len(communityIDs) > 0 {
+			event.CommunityID = communityIDs[0]
+		}
+		if err := s.eventPublisher.PublishPostCreated(context.Background(), event); err != nil {
+			fmt.Printf("failed to publish post created event for post %s: %v\n", createdPost.ID.String(), err)
+		}
+	}
+
+	return createdPost, nil
 }
 
 func parseUUIDs(ids []string) ([]uuid.UUID, error) {
@@ -156,10 +191,33 @@ func uniqueIDs(ids []string) []string {
 
 // GetPost retrieves a post by ID
 func (s *Service) GetPost(id uuid.UUID) (*Post, error) {
-	if s.repo != nil {
-		return s.repo.FindByID(id)
+	if s.repo == nil {
+		return nil, fmt.Errorf("repository not initialized")
 	}
-	return nil, fmt.Errorf("post not found")
+
+	post, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	if post == nil {
+		return nil, fmt.Errorf("post not found")
+	}
+
+	if s.eventPublisher != nil {
+		event := events.PostViewedEvent{
+			BaseEvent: events.BaseEvent{
+				EventID:   uuid.New(),
+				Timestamp: time.Now(),
+				EventType: events.EventTypePostViewed,
+			},
+			PostID: post.ID,
+		}
+
+		if err := s.eventPublisher.PublishPostViewed(context.Background(), event); err != nil {
+			return nil, err
+		}
+	}
+	return post, nil
 }
 
 // GetAllPosts retrieves all posts
@@ -213,6 +271,18 @@ func (s *Service) UpdatePost(id uuid.UUID, req UpdatePostRequest, userID uuid.UU
 		return nil, errors.New("you are not allowed to update this post")
 	}
 
+	//save old values before mutation
+	oldAddress := post.Address
+	oldIsSublet := post.IsSublet
+	oldPrice := post.Price
+	oldRooms := post.Rooms
+	oldRoomsOccupied := post.RoomsOccupied
+	oldBathrooms := post.Bathrooms
+	oldDescription := post.Description
+	oldGender := post.Gender
+	oldPropertyType := post.PropertyType
+	oldTerm := post.Term
+
 	// Update fields if provided (pointer fields are nil when omitted)
 	if req.Address != nil {
 		post.Address = *req.Address
@@ -262,15 +332,94 @@ func (s *Service) UpdatePost(id uuid.UUID, req UpdatePostRequest, userID uuid.UU
 		return nil, err
 	}
 
+	if s.eventPublisher != nil {
+		updatedFields := make(map[string]events.FieldChange)
+		if post.Address != oldAddress {
+			updatedFields["address"] = events.FieldChange{Old: oldAddress, New: post.Address}
+		}
+		if post.IsSublet != oldIsSublet {
+			updatedFields["isSublet"] = events.FieldChange{Old: oldIsSublet, New: post.IsSublet}
+		}
+		if post.Price != oldPrice {
+			updatedFields["price"] = events.FieldChange{Old: oldPrice, New: post.Price}
+		}
+		if post.Rooms != oldRooms {
+			updatedFields["rooms"] = events.FieldChange{Old: oldRooms, New: post.Rooms}
+		}
+		if post.RoomsOccupied != oldRoomsOccupied {
+			updatedFields["roomsOccupied"] = events.FieldChange{Old: oldRoomsOccupied, New: post.RoomsOccupied}
+		}
+		if post.Bathrooms != oldBathrooms {
+			updatedFields["bathrooms"] = events.FieldChange{Old: oldBathrooms, New: post.Bathrooms}
+		}
+		if post.Description != oldDescription {
+			updatedFields["description"] = events.FieldChange{Old: oldDescription, New: post.Description}
+		}
+		if post.Gender != oldGender {
+			updatedFields["gender"] = events.FieldChange{Old: oldGender, New: post.Gender}
+		}
+		if post.PropertyType != oldPropertyType {
+			updatedFields["propertyType"] = events.FieldChange{Old: oldPropertyType, New: post.PropertyType}
+		}
+		if post.Term != oldTerm {
+			updatedFields["term"] = events.FieldChange{Old: oldTerm, New: post.Term}
+		}
+		if len(updatedFields) > 0 {
+			event := events.PostUpdatedEvent{
+				BaseEvent: events.BaseEvent{
+					EventID:   uuid.New(),
+					Timestamp: time.Now(),
+					EventType: events.EventTypePostUpdated,
+				},
+				PostID:        post.ID,
+				AuthorID:      userID,
+				UpdatedFields: updatedFields,
+			}
+
+			if err := s.eventPublisher.PublishPostUpdated(context.Background(), event); err != nil {
+				fmt.Printf("failed to publish post updated event: %v\n", err)
+			}
+		}
+	}
+
 	return post, nil
 }
 
 // DeletePost deletes a post
 func (s *Service) DeletePost(id uuid.UUID) error {
-	if s.repo != nil {
-		return s.repo.Delete(id)
+	if s.repo == nil {
+		return fmt.Errorf("repository not initialized")
 	}
-	return fmt.Errorf("not implemented")
+
+	post, err := s.repo.FindByID(id)
+	if err != nil {
+		return err
+	}
+	if post == nil {
+		return fmt.Errorf("post not found")
+	}
+
+	if err := s.repo.Delete(id); err != nil {
+		return err
+	}
+
+	if s.eventPublisher != nil {
+		event := events.PostDeletedEvent{
+			BaseEvent: events.BaseEvent{
+				EventID:   uuid.New(),
+				Timestamp: time.Now(),
+				EventType: events.EventTypePostDeleted,
+			},
+			PostID:   post.ID,
+			AuthorID: post.UserID,
+		}
+
+		if err := s.eventPublisher.PublishPostDeleted(context.Background(), event); err != nil {
+			fmt.Printf("failed to publish post deleted event: %v\n", err)
+		}
+	}
+
+	return nil
 }
 
 // Add a middleware function to check user roles and permissions
