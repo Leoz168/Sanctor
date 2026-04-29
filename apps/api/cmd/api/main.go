@@ -14,6 +14,7 @@ import (
 	"sanctor/internal/config"
 	"sanctor/internal/database"
 	"sanctor/internal/dm"
+	"sanctor/internal/events"
 	"sanctor/internal/institution"
 	"sanctor/internal/middleware"
 	"sanctor/internal/picture"
@@ -129,7 +130,8 @@ func main() {
 	var postService *post.Service
 	if db != nil {
 		postRepo := post.NewGormRepository(db)
-		postService = post.NewService(postRepo)
+		eventPublisher := events.NewStubPublisher()
+		postService = post.NewService(postRepo, eventPublisher)
 		log.Println("✅ Posts initialized with database")
 	} else {
 		log.Fatal("⚠️  In-memory storage is no longer supported for posts")
