@@ -2,7 +2,6 @@ package blocking
 
 import (
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,38 +15,26 @@ func NewService(repo Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) CreateBlock(req CreateBlockRequest) (*UserBlock, error) {
-	blockerID := strings.TrimSpace(req.BlockerID)
-	blockeeID := strings.TrimSpace(req.BlockeeID)
-
-	if blockerID == "" {
+func (s *Service) CreateBlock(blockerID, blockeeID uuid.UUID) (*UserBlock, error) {
+	if blockerID == uuid.Nil {
 		return nil, errors.New("blocker ID is required")
 	}
-	blockerUUID, err := uuid.Parse(blockerID)
-	if err != nil {
-		return nil, errors.New("invalid blocker ID format")
-	}
-
-	if blockeeID == "" {
+	if blockeeID == uuid.Nil {
 		return nil, errors.New("blockee ID is required")
 	}
-	blockeeUUID, err := uuid.Parse(blockeeID)
-	if err != nil {
-		return nil, errors.New("invalid blockee ID format")
-	}
 
-	if blockerUUID == blockeeUUID {
+	if blockerID == blockeeID {
 		return nil, errors.New("user cannot block themselves")
 	}
 
-	if !s.repo.ExistsUser(blockerUUID) {
+	if !s.repo.ExistsUser(blockerID) {
 		return nil, errors.New("blocker user not found")
 	}
-	if !s.repo.ExistsUser(blockeeUUID) {
+	if !s.repo.ExistsUser(blockeeID) {
 		return nil, errors.New("blockee user not found")
 	}
 
-	exists, err := s.repo.Exists(blockerUUID, blockeeUUID)
+	exists, err := s.repo.Exists(blockerID, blockeeID)
 	if err != nil {
 		return nil, err
 	}
@@ -56,9 +43,10 @@ func (s *Service) CreateBlock(req CreateBlockRequest) (*UserBlock, error) {
 	}
 
 	block := &UserBlock{
-		LinkedAt: time.Now().UnixMilli(),
-		Blocker:  blockerUUID,
-		Blockee:  blockeeUUID,
+		ID:       uuid.New(),
+		LinkedAt: time.Now(),
+		Blocker:  blockerID,
+		Blockee:  blockeeID,
 	}
 
 	if err := s.repo.Create(block); err != nil {

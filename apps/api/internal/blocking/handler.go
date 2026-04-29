@@ -99,8 +99,8 @@ func CheckBlock(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(BlockStatusResponse{
-		BlockerID: blockerID,
-		BlockeeID: blockeeID,
+		BlockerID: blockerUUID,
+		BlockeeID: blockeeUUID,
 		IsBlocked: isBlocked,
 	})
 }
@@ -125,7 +125,7 @@ func CreateBlock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	block, err := service.CreateBlock(req)
+	block, err := service.CreateBlock(req.BlockerID, req.BlockeeID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

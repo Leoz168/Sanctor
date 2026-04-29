@@ -33,7 +33,7 @@ func (r *InMemoryRepository) FindByBlockerID(blockerID uuid.UUID) ([]*UserBlock,
 		}
 	}
 	sort.Slice(blocks, func(i, j int) bool {
-		return blocks[i].LinkedAt > blocks[j].LinkedAt
+		return blocks[i].LinkedAt.After(blocks[j].LinkedAt)
 	})
 	return blocks, nil
 }
@@ -46,7 +46,7 @@ func (r *InMemoryRepository) FindByBlockeeID(blockeeID uuid.UUID) ([]*UserBlock,
 		}
 	}
 	sort.Slice(blocks, func(i, j int) bool {
-		return blocks[i].LinkedAt > blocks[j].LinkedAt
+		return blocks[i].LinkedAt.After(blocks[j].LinkedAt)
 	})
 	return blocks, nil
 }

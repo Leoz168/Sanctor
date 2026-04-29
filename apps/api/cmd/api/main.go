@@ -142,20 +142,6 @@ func main() {
 	// Health check endpoints
 	http.HandleFunc("/health", healthHandler)
 	http.HandleFunc("/api/health", healthHandler)
-
-	// Initialize shared user service
-	var userRepo user.Repository
-	if db != nil {
-		userRepo = user.NewPostgresRepository(db)
-	} else {
-		userRepo = user.NewRepository()
-	}
-	userService := user.NewService(userRepo)
-
-	// Auth endpoints
-	authRepo := auth.NewRepository()
-	authService := auth.NewService(authRepo, userService)
-	authHandler := auth.NewHandler(authService)
 	http.HandleFunc("/api/auth/register", authHandler.Register)
 	http.HandleFunc("/api/auth/login", authHandler.Login)
 
