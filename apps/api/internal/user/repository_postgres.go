@@ -28,15 +28,15 @@ func (r *PostgresRepository) Create(user *User) error {
 	query := `
 		INSERT INTO users (
 			id, email, username, first_name, last_name, password_hash,
-			avatar, bio, is_active, is_verified,last_login_at,
+			avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
 			created_at, updated_at, gender, age, institution_id, major
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 	`
 
 	_, err := r.db.Exec(query,
 		user.ID, user.Email, user.Username, user.FirstName, user.LastName,
 		user.PasswordHash, user.Avatar, user.Bio, user.IsActive, user.IsVerified,
-		user.LastLoginAt, user.CreatedAt, user.UpdatedAt,
+		user.IsBlacklisted, user.LastLoginAt, user.CreatedAt, user.UpdatedAt,
 		user.Gender, user.Age, user.InstitutionID, user.Major,
 	)
 
@@ -48,7 +48,7 @@ func (r *PostgresRepository) FindByID(id uuid.UUID) (*User, error) {
 	user := &User{}
 	query := `
 		SELECT id, email, username, first_name, last_name, password_hash,
-		       avatar, bio, is_active, is_verified, last_login_at,
+		       avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
 		       created_at, updated_at, gender, age, institution_id, major
 		FROM users WHERE id = $1
 	`
@@ -56,7 +56,7 @@ func (r *PostgresRepository) FindByID(id uuid.UUID) (*User, error) {
 	err := r.db.QueryRow(query, id).Scan(
 		&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
 		&user.PasswordHash, &user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
-		&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
+		&user.IsBlacklisted, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
 		&user.Gender, &user.Age, &user.InstitutionID, &user.Major,
 	)
 
@@ -74,7 +74,7 @@ func (r *PostgresRepository) FindByID(id uuid.UUID) (*User, error) {
 func (r *PostgresRepository) FindAll() []*User {
 	query := `
 		SELECT id, email, username, first_name, last_name, password_hash,
-		       avatar, bio, is_active, is_verified, last_login_at,
+		       avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
 		       created_at, updated_at, gender, age, institution_id, major
 		FROM users
 		ORDER BY created_at DESC
@@ -92,7 +92,7 @@ func (r *PostgresRepository) FindAll() []*User {
 		err := rows.Scan(
 			&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
 			&user.PasswordHash, &user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
-			&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
+			&user.IsBlacklisted, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
 			&user.Gender, &user.Age, &user.InstitutionID, &user.Major,
 		)
 		if err == nil {
@@ -113,15 +113,15 @@ func (r *PostgresRepository) Update(user *User) error {
 		UPDATE users SET
 			email = $2, username = $3, first_name = $4, last_name = $5,
 			password_hash = $6, avatar = $7, bio = $8, is_active = $9,
-			is_verified = $10, last_login_at = $11, updated_at = $12,
-			gender = $13, age = $14, institution_id = $15, major = $16
+			is_verified = $10, is_blacklisted = $11, last_login_at = $12, updated_at = $13,
+			gender = $14, age = $15, institution_id = $16, major = $17
 		WHERE id = $1
 	`
 
 	result, err := r.db.Exec(query,
 		user.ID, user.Email, user.Username, user.FirstName, user.LastName,
 		user.PasswordHash, user.Avatar, user.Bio, user.IsActive, user.IsVerified,
-		user.LastLoginAt, user.UpdatedAt,
+		user.IsBlacklisted, user.LastLoginAt, user.UpdatedAt,
 		user.Gender, user.Age, user.InstitutionID, user.Major,
 	)
 	if err != nil {
@@ -167,6 +167,20 @@ func (r *PostgresRepository) ExistsByEmail(email string) bool {
 	return err == nil && exists
 }
 
+// IsEmailBlacklisted checks if a user with the given email is blacklisted.
+func (r *PostgresRepository) IsEmailBlacklisted(email string) (bool, error) {
+	var isBlacklisted bool
+	query := `SELECT is_blacklisted FROM users WHERE email = $1`
+	err := r.db.QueryRow(query, email).Scan(&isBlacklisted)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return isBlacklisted, nil
+}
+
 // ExistsByUsername checks if a user with the given username exists
 func (r *PostgresRepository) ExistsByUsername(username string) bool {
 	var exists bool
@@ -180,7 +194,7 @@ func (r *PostgresRepository) FindByEmail(email string) (*User, error) {
 	user := &User{}
 	query := `
 		SELECT id, email, username, first_name, last_name, password_hash,
-		       avatar, bio, is_active, is_verified, last_login_at,
+		       avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
 		       created_at, updated_at, gender, age, institution_id, major
 		FROM users WHERE email = $1
 	`
@@ -188,7 +202,7 @@ func (r *PostgresRepository) FindByEmail(email string) (*User, error) {
 	err := r.db.QueryRow(query, email).Scan(
 		&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
 		&user.PasswordHash, &user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
-		&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
+		&user.IsBlacklisted, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
 		&user.Gender, &user.Age, &user.InstitutionID, &user.Major,
 	)
 
@@ -207,7 +221,7 @@ func (r *PostgresRepository) FindByUsername(username string) (*User, error) {
 	user := &User{}
 	query := `
 		SELECT id, email, username, first_name, last_name, password_hash,
-		       avatar, bio, is_active, is_verified, last_login_at,
+		       avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
 		       created_at, updated_at, gender, age, institution_id, major
 		FROM users WHERE username = $1
 	`
@@ -215,7 +229,7 @@ func (r *PostgresRepository) FindByUsername(username string) (*User, error) {
 	err := r.db.QueryRow(query, username).Scan(
 		&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
 		&user.PasswordHash, &user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
-		&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
+		&user.IsBlacklisted, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
 		&user.Gender, &user.Age, &user.InstitutionID, &user.Major,
 	)
 

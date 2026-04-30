@@ -10,6 +10,7 @@ type Repository interface {
 	Update(user *User) error
 	Delete(id uuid.UUID) error
 	ExistsByEmail(email string) bool
+	IsEmailBlacklisted(email string) (bool, error)
 	ExistsByUsername(username string) bool
 	FindByEmail(email string) (*User, error)
 	FindByUsername(username string) (*User, error)
