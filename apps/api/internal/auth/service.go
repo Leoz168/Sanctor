@@ -76,6 +76,9 @@ func (s *Service) Login(req LoginRequest) (*AuthResponse, error) {
 	if err != nil {
 		return nil, errors.New("user not found")
 	}
+	if u.IsBlacklisted {
+		return nil, user.ErrUserBlacklisted
+	}
 	// Check password
 	if !user.CheckPassword(req.Password, u.PasswordHash) {
 		return nil, errors.New("invalid password")

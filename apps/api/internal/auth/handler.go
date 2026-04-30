@@ -2,7 +2,10 @@ package auth
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+
+	"sanctor/internal/user"
 )
 
 // Handler handles HTTP requests for authentication
@@ -31,7 +34,11 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.service.Login(req)
 	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
+		status := http.StatusUnauthorized
+		if errors.Is(err, user.ErrUserBlacklisted) {
+			status = http.StatusForbidden
+		}
+		w.WriteHeader(status)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
@@ -54,7 +61,11 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.service.Register(req)
 	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		status := http.StatusBadRequest
+		if errors.Is(err, user.ErrEmailBlacklisted) {
+			status = http.StatusForbidden
+		}
+		w.WriteHeader(status)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}

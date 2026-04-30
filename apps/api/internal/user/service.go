@@ -28,6 +28,14 @@ func (s *Service) CreateUser(req CreateUserRequest) (*User, error) {
 		return nil, errors.New("invalid email format")
 	}
 
+	blacklisted, err := s.repo.IsEmailBlacklisted(req.Email)
+	if err != nil {
+		return nil, err
+	}
+	if blacklisted {
+		return nil, ErrEmailBlacklisted
+	}
+
 	if err := ValidateUsername(req.Username); err != nil {
 		return nil, err
 	}
@@ -74,6 +82,7 @@ func (s *Service) CreateUser(req CreateUserRequest) (*User, error) {
 		Major:         req.Major,
 		IsActive:      true,
 		IsVerified:    false,
+		IsBlacklisted: false,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	}

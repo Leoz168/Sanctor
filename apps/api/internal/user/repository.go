@@ -76,6 +76,16 @@ func (r *InMemoryRepository) ExistsByEmail(email string) bool {
 	return false
 }
 
+// IsEmailBlacklisted checks if a user with the given email is blacklisted.
+func (r *InMemoryRepository) IsEmailBlacklisted(email string) (bool, error) {
+	for _, user := range r.users {
+		if user.Email == email {
+			return user.IsBlacklisted, nil
+		}
+	}
+	return false, nil
+}
+
 // ExistsByUsername checks if a user with the given username exists
 func (r *InMemoryRepository) ExistsByUsername(username string) bool {
 	for _, user := range r.users {

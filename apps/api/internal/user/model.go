@@ -19,6 +19,7 @@ type User struct {
 	Bio           string             `json:"bio,omitempty" gorm:"type:text"`
 	IsActive      bool               `json:"isActive" gorm:"default:true"`
 	IsVerified    bool               `json:"isVerified" gorm:"default:false"`
+	IsBlacklisted bool               `json:"isBlacklisted" gorm:"default:false"`
 	LastLoginAt   *time.Time         `json:"lastLoginAt,omitempty"`
 	CreatedAt     time.Time          `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt     time.Time          `json:"updatedAt" gorm:"autoUpdateTime"`
