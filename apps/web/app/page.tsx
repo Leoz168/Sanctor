@@ -40,7 +40,7 @@ export default function HomePage() {
                 Communities
               </a>
               <a
-                href="#"
+                href="/post-listings"
                 className="text-sm font-medium text-gray-600 hover:text-brand-orange transition-colors"
                 id="nav-post-listing"
               >
@@ -74,7 +74,7 @@ export default function HomePage() {
             <a href="#" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-brand-orange">
               Communities
             </a>
-            <a href="#" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-brand-orange">
+            <a href="/post-listings" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-brand-orange">
               Post Listing
             </a>
             <button className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-brand-orange text-white rounded-full font-medium">
