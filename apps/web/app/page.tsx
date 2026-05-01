@@ -33,7 +33,7 @@ export default function HomePage() {
 
             <div className="hidden md:flex items-center gap-8">
               <a
-                href="#"
+                href="/communities"
                 className="text-sm font-medium text-gray-600 hover:text-brand-orange transition-colors"
                 id="nav-communities"
               >
@@ -71,7 +71,7 @@ export default function HomePage() {
 
         {isMenuOpen && (
           <div className="md:hidden bg-white border-b border-gray-200 p-4 space-y-4">
-            <a href="#" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-brand-orange">
+            <a href="/communities" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-brand-orange">
               Communities
             </a>
             <a href="/post-listings" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-brand-orange">
