@@ -1,70 +1,70 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, Filter, Home, Plus, Search, User } from "lucide-react";
-import { ListingCard } from "@/components/listing-card";
+import { ChevronDown, Home, MessageSquare, Search, SlidersHorizontal, User } from "lucide-react";
+import { CommunityCard } from "@/components/community-card";
 
-const listings = [
+const communities = [
   {
     id: 1,
-    title: "Modern Studio near campus",
-    price: 1200,
-    location: "St. George Campus, Toronto",
-    beds: 1,
-    baths: 1,
-    image: "/images/listing-1.jpg",
-    badge: "featured" as const,
+    name: "Computer Science Collective",
+    description: "The primary hub for CSS/CS students to share resources, study groups, and tech news.",
+    category: "ACADEMIC",
+    members: 1248,
+    postsPerWeek: 382,
+    image: "/images/community-1.jpg",
+    isJoined: true,
   },
   {
     id: 2,
-    title: "Shared 3BR House - Female only",
-    price: 850,
-    location: "North Campus Area",
-    beds: 3,
-    baths: 2,
-    image: "/images/listing-2.jpg",
-    badge: "new" as const,
+    name: "Residence Life Hub",
+    description: "Stay updated on campus events, cafeteria menus, and dorm-specific announcements.",
+    category: "RESIDENCE",
+    members: 1892,
+    postsPerWeek: 524,
+    isJoined: false,
   },
   {
     id: 3,
-    title: "Luxury Apartment in Downtown",
-    price: 2100,
-    location: "Downtown Core",
-    beds: 2,
-    baths: 2,
-    image: "/images/listing-3.jpg",
+    name: "Student Market & Swap",
+    description: "Buy and sell textbooks, electronics, and furniture within the university community.",
+    category: "MARKET",
+    members: 3450,
+    postsPerWeek: 890,
+    isJoined: false,
   },
   {
     id: 4,
-    title: "Cozy Loft for Students",
-    price: 950,
-    location: "East Side Campus",
-    beds: 1,
-    baths: 1,
-    image: "/images/listing-4.jpg",
+    name: "Campus Social Circle",
+    description: "Casual discussion for weekend plans, club events, and general campus life.",
+    category: "SOCIAL",
+    members: 2100,
+    postsPerWeek: 412,
+    image: "/images/community-4.jpg",
+    isJoined: false,
   },
   {
     id: 5,
-    title: "Renovated Basement Suite",
-    price: 1100,
-    location: "West Campus Gardens",
-    beds: 1,
-    baths: 1,
-    image: "/images/listing-5.jpg",
+    name: "The Art Studio Zone",
+    description: "A creative space for visual artists, photographers, and designers to collaborate.",
+    category: "SOCIAL",
+    members: 850,
+    postsPerWeek: 125,
+    image: "/images/community-5.jpg",
+    isJoined: false,
   },
   {
     id: 6,
-    title: "Large 4BR Student Residence",
-    price: 700,
-    location: "Campus South",
-    beds: 4,
-    baths: 3,
-    image: "/images/listing-6.jpg",
-    badge: "new" as const,
+    name: "Pre-Med Study Group",
+    description: "Advanced study materials, MCAT prep, and lab report discussions.",
+    category: "ACADEMIC",
+    members: 1100,
+    postsPerWeek: 245,
+    isJoined: false,
   },
 ];
 
-export default function PostListingsPage() {
+export default function CommunitiesPage() {
   return (
     <div className="min-h-screen flex flex-col bg-white font-sans">
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
@@ -80,10 +80,10 @@ export default function PostListingsPage() {
             </Link>
 
             <div className="hidden md:flex items-center gap-8">
-              <Link href="/communities" className="text-sm font-medium text-gray-600 hover:text-brand-orange transition-colors">
+              <Link href="/communities" className="text-sm font-medium text-brand-orange transition-colors">
                 Communities
               </Link>
-              <Link href="/post-listings" className="text-sm font-medium text-brand-orange transition-colors">
+              <Link href="/post-listings" className="text-sm font-medium text-gray-600 hover:text-brand-orange transition-colors">
                 Post Listing
               </Link>
               <div className="h-4 w-px bg-gray-200" />
@@ -103,46 +103,44 @@ export default function PostListingsPage() {
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search postings..."
+                placeholder="Find communities..."
                 className="w-full bg-brand-cream border border-gray-100 rounded-3xl pl-14 pr-6 py-4 text-base font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand-orange/20 transition-all shadow-inner"
               />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
               <label className="relative">
-                <span className="sr-only">Listing type</span>
-                <select className="w-full sm:w-40 appearance-none bg-brand-cream border border-gray-100 rounded-2xl px-5 py-4 pr-10 text-sm font-bold text-gray-700 cursor-pointer hover:bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-brand-orange/20">
-                  <option>All Types</option>
-                  <option>Apartment</option>
-                  <option>House</option>
-                  <option>Studio</option>
-                  <option>Shared</option>
+                <span className="sr-only">Community category</span>
+                <select className="w-full sm:w-44 appearance-none bg-brand-cream border border-gray-100 rounded-2xl px-5 py-4 pr-10 text-sm font-bold text-gray-700 cursor-pointer hover:bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-brand-orange/20">
+                  <option>All Categories</option>
+                  <option>Academic</option>
+                  <option>Social</option>
+                  <option>Residence</option>
+                  <option>Market</option>
                 </select>
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
               </label>
 
               <label className="relative">
-                <span className="sr-only">Price range</span>
+                <span className="sr-only">Sort communities</span>
                 <select className="w-full sm:w-40 appearance-none bg-brand-cream border border-gray-100 rounded-2xl px-5 py-4 pr-10 text-sm font-bold text-gray-700 cursor-pointer hover:bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-brand-orange/20">
-                  <option>Any Price</option>
-                  <option>Under $500</option>
-                  <option>Under $1000</option>
-                  <option>Under $1500</option>
-                  <option>Under $2000</option>
+                  <option>Most Active</option>
+                  <option>Newest</option>
+                  <option>Largest</option>
                 </select>
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
               </label>
 
               <button className="h-[54px] w-full sm:w-[54px] rounded-2xl bg-brand-cream border border-gray-100 text-gray-700 hover:bg-white transition-colors flex items-center justify-center">
-                <Filter size={20} />
+                <SlidersHorizontal size={20} />
                 <span className="sr-only">More filters</span>
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {listings.map((listing) => (
-              <ListingCard key={listing.id} {...listing} />
+            {communities.map((community) => (
+              <CommunityCard key={community.id} {...community} />
             ))}
           </div>
         </div>
@@ -179,8 +177,8 @@ export default function PostListingsPage() {
       </footer>
 
       <button className="fixed bottom-8 right-6 sm:right-8 flex items-center gap-2 px-5 py-4 bg-brand-orange text-white rounded-full font-bold shadow-xl shadow-brand-orange/30 hover:bg-orange-600 transition-all active:scale-95">
-        <Plus className="w-5 h-5" />
-        <span>Make a post</span>
+        <MessageSquare className="w-5 h-5" />
+        <span>Create a community</span>
       </button>
     </div>
   );
