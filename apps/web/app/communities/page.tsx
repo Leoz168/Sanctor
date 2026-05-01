@@ -7,6 +7,7 @@ import { CommunityCard } from "@/components/community-card";
 const communities = [
   {
     id: 1,
+    href: "/communities/computer-science-collective",
     name: "Computer Science Collective",
     description: "The primary hub for CSS/CS students to share resources, study groups, and tech news.",
     category: "ACADEMIC",
@@ -17,6 +18,7 @@ const communities = [
   },
   {
     id: 2,
+    href: "/communities/residence-life-hub",
     name: "Residence Life Hub",
     description: "Stay updated on campus events, cafeteria menus, and dorm-specific announcements.",
     category: "RESIDENCE",
@@ -26,6 +28,7 @@ const communities = [
   },
   {
     id: 3,
+    href: "/communities/student-market-swap",
     name: "Student Market & Swap",
     description: "Buy and sell textbooks, electronics, and furniture within the university community.",
     category: "MARKET",
@@ -35,6 +38,7 @@ const communities = [
   },
   {
     id: 4,
+    href: "/communities/campus-social-circle",
     name: "Campus Social Circle",
     description: "Casual discussion for weekend plans, club events, and general campus life.",
     category: "SOCIAL",
@@ -45,6 +49,7 @@ const communities = [
   },
   {
     id: 5,
+    href: "/communities/art-studio-zone",
     name: "The Art Studio Zone",
     description: "A creative space for visual artists, photographers, and designers to collaborate.",
     category: "SOCIAL",
@@ -55,6 +60,7 @@ const communities = [
   },
   {
     id: 6,
+    href: "/communities/pre-med-study-group",
     name: "Pre-Med Study Group",
     description: "Advanced study materials, MCAT prep, and lab report discussions.",
     category: "ACADEMIC",
