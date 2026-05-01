@@ -1,7 +1,9 @@
 import Image from "next/image";
+import Link from "next/link";
 import { MessageSquare } from "lucide-react";
 
 interface CommunityCardProps {
+  href: string;
   name: string;
   description: string;
   category: string;
@@ -12,6 +14,7 @@ interface CommunityCardProps {
 }
 
 export function CommunityCard({
+  href,
   name,
   description,
   category,
@@ -42,9 +45,11 @@ export function CommunityCard({
       </div>
 
       <div className="p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-brand-orange transition-colors">
-          {name}
-        </h3>
+        <Link href={href} className="block">
+          <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-brand-orange transition-colors">
+            {name}
+          </h3>
+        </Link>
         <p className="text-sm text-gray-500 mb-5 line-clamp-2 leading-relaxed">
           {description}
         </p>
@@ -64,15 +69,16 @@ export function CommunityCard({
           </div>
         </div>
 
-        <button
-          className={`w-full rounded-xl px-4 py-3 text-sm font-bold transition-colors ${
+        <Link
+          href={href}
+          className={`block w-full rounded-xl px-4 py-3 text-center text-sm font-bold transition-colors ${
             isJoined
               ? "border border-gray-200 text-gray-500 hover:bg-gray-50"
               : "border border-brand-orange/30 bg-brand-orange/5 text-brand-orange hover:bg-brand-orange hover:text-white"
           }`}
         >
           {isJoined ? "JOINED" : "JOIN COMMUNITY"}
-        </button>
+        </Link>
       </div>
     </div>
   );

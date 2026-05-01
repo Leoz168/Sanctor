@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import {
   ChevronDown,
@@ -32,20 +33,20 @@ export default function HomePage() {
             </div>
 
             <div className="hidden md:flex items-center gap-8">
-              <a
+              <Link
                 href="/communities"
                 className="text-sm font-medium text-gray-600 hover:text-brand-orange transition-colors"
                 id="nav-communities"
               >
                 Communities
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/post-listings"
                 className="text-sm font-medium text-gray-600 hover:text-brand-orange transition-colors"
                 id="nav-post-listing"
               >
                 Post Listing
-              </a>
+              </Link>
               <div className="h-4 w-px bg-gray-200" />
               <button
                 className="flex items-center gap-2 px-5 py-2.5 bg-brand-orange text-white rounded-full font-medium shadow-md hover:shadow-lg hover:bg-orange-600 transition-all active:scale-95"
@@ -71,12 +72,12 @@ export default function HomePage() {
 
         {isMenuOpen && (
           <div className="md:hidden bg-white border-b border-gray-200 p-4 space-y-4">
-            <a href="/communities" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-brand-orange">
+            <Link href="/communities" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-brand-orange">
               Communities
-            </a>
-            <a href="/post-listings" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-brand-orange">
+            </Link>
+            <Link href="/post-listings" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-brand-orange">
               Post Listing
-            </a>
+            </Link>
             <button className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-brand-orange text-white rounded-full font-medium">
               <User size={18} />
               <span>Login</span>
