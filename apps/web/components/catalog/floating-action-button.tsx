@@ -5,6 +5,7 @@ interface FloatingActionButtonProps {
   icon: LucideIcon;
   children: string;
   href?: string;
+  onClick?: () => void;
   placement?: "fixed" | "inline" | "top-right";
 }
 
@@ -12,6 +13,7 @@ export function FloatingActionButton({
   icon: Icon,
   children,
   href,
+  onClick,
   placement = "fixed",
 }: FloatingActionButtonProps) {
   const content = (
@@ -32,7 +34,7 @@ export function FloatingActionButton({
       {content}
     </Link>
   ) : (
-    <button className={className}>
+    <button type="button" className={className} onClick={onClick}>
       {content}
     </button>
   );
