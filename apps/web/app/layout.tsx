@@ -3,8 +3,8 @@ import { FloatingMessageButton } from "@/components/messages/floating-message-bu
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Sanctor",
-  description: "Community-first campus platform",
+  title: "Rentling",
+  description: "Community-first student housing platform",
 };
 
 export default function RootLayout({
