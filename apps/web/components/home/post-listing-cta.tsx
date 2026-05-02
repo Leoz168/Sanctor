@@ -3,9 +3,16 @@ import Image from "next/image";
 import { Plus } from "lucide-react";
 
 export function PostListingCta() {
+  const images = [
+    { src: "/images/listing-1.jpg", alt: "Student bedroom" },
+    { src: "/images/listing-2.jpg", alt: "Modern student housing" },
+    { src: "/images/listing-3.jpg", alt: "Apartment kitchen" },
+    { src: "/images/listing-4.jpg", alt: "Student living room" },
+  ];
+
   return (
     <section className="mx-auto max-w-6xl px-4 pb-20">
-      <div className="grid overflow-hidden rounded-[2rem] bg-brand-orange shadow-2xl shadow-orange-900/10 lg:grid-cols-2">
+      <div className="grid overflow-hidden rounded-[2rem] bg-brand-orange shadow-2xl shadow-orange-900/10 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="flex min-h-[320px] flex-col items-center justify-center px-8 py-12 text-center text-white sm:px-12">
           <h2 className="text-4xl font-black leading-none tracking-tight sm:text-5xl">
             Own a space?
@@ -25,14 +32,18 @@ export function PostListingCta() {
           </Link>
         </div>
 
-        <div className="relative min-h-[260px] lg:min-h-[360px]">
-          <Image
-            src="/images/listing-3.jpg"
-            alt="Modern student rental property"
-            fill
-            sizes="(min-width: 1024px) 50vw, 100vw"
-            className="object-cover"
-          />
+        <div className="grid min-h-[300px] grid-cols-2 gap-4 bg-white lg:min-h-[420px]">
+          {images.map((image) => (
+            <div key={image.src} className="relative overflow-hidden">
+              <Image
+                src={image.src}
+                alt={image.alt}
+                fill
+                sizes="(min-width: 1024px) 28vw, 50vw"
+                className="object-cover"
+              />
+            </div>
+          ))}
         </div>
       </div>
     </section>
