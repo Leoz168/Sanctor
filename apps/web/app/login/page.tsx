@@ -27,7 +27,8 @@ export default function LoginPage() {
         description="Use your account to manage saved homes and community posts."
         fields={fields}
         submitLabel="Login"
-        footerText="New to Renting?"
+        googleLabel="Sign in with Google"
+        footerText="New to Rentling?"
         footerLinkLabel="Create an account"
         footerHref="/register"
       >
