@@ -1,6 +1,6 @@
-import { Filter, Plus } from "lucide-react";
-import { FilterToolbar } from "@/components/catalog/filter-toolbar";
+import { Plus } from "lucide-react";
 import { FloatingActionButton } from "@/components/catalog/floating-action-button";
+import { HousingFilterPanel } from "@/components/catalog/housing-filter-panel";
 import { AppShell } from "@/components/layout/app-shell";
 import { ListingCard } from "@/components/listing-card";
 
@@ -64,16 +64,11 @@ const listings = [
   },
 ];
 
-const filters = [
-  { label: "Listing type", options: ["All Types", "Apartment", "House", "Studio", "Shared"], className: "sm:w-40" },
-  { label: "Price range", options: ["Any Price", "Under $500", "Under $1000", "Under $1500", "Under $2000"], className: "sm:w-40" },
-];
-
 export default function PostListingsPage() {
   return (
     <AppShell floatingAction={<FloatingActionButton icon={Plus}>Make a post</FloatingActionButton>}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <FilterToolbar searchPlaceholder="Search postings..." filters={filters} actionIcon={<Filter size={20} />} />
+        <HousingFilterPanel />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {listings.map((listing) => (

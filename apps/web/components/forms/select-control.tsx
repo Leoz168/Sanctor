@@ -8,16 +8,29 @@ interface SelectControlProps {
   value?: string;
   onChange?: (value: string) => void;
   className?: string;
+  variant?: "default" | "panel";
 }
 
-export function SelectControl({ label, options, value, onChange, className = "" }: SelectControlProps) {
+export function SelectControl({
+  label,
+  options,
+  value,
+  onChange,
+  className = "",
+  variant = "default",
+}: SelectControlProps) {
+  const selectClassName =
+    variant === "panel"
+      ? "w-full appearance-none bg-white border border-gray-100 rounded-xl px-4 py-3 pr-10 text-sm font-bold text-gray-700 cursor-pointer hover:bg-brand-cream transition-colors focus:outline-none focus:ring-2 focus:ring-brand-orange/20"
+      : "w-full appearance-none bg-brand-cream border border-gray-100 rounded-2xl px-5 py-4 pr-10 text-sm font-bold text-gray-700 cursor-pointer hover:bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-brand-orange/20";
+
   return (
     <label className={`relative ${className}`}>
       <span className="sr-only">{label}</span>
       <select
         value={value}
         onChange={(event) => onChange?.(event.target.value)}
-        className="w-full appearance-none bg-brand-cream border border-gray-100 rounded-2xl px-5 py-4 pr-10 text-sm font-bold text-gray-700 cursor-pointer hover:bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-brand-orange/20"
+        className={selectClassName}
       >
         {options.map((option) => (
           <option key={option}>{option}</option>
