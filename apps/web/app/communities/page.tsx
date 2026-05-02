@@ -1,5 +1,5 @@
 import { MessageSquare } from "lucide-react";
-import { FilterToolbar } from "@/components/catalog/filter-toolbar";
+import { CommunityFilterPanel } from "@/components/catalog/community-filter-panel";
 import { FloatingActionButton } from "@/components/catalog/floating-action-button";
 import { CommunityCard } from "@/components/community-card";
 import { AppShell } from "@/components/layout/app-shell";
@@ -70,16 +70,11 @@ const communities = [
   },
 ];
 
-const filters = [
-  { label: "Community category", options: ["All Categories", "Academic", "Social", "Residence", "Market"], className: "sm:w-44" },
-  { label: "Sort communities", options: ["Most Active", "Newest", "Largest"], className: "sm:w-40" },
-];
-
 export default function CommunitiesPage() {
   return (
     <AppShell floatingAction={<FloatingActionButton icon={MessageSquare}>Create a community</FloatingActionButton>}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <FilterToolbar searchPlaceholder="Find communities..." filters={filters} />
+        <CommunityFilterPanel />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {communities.map((community) => (
