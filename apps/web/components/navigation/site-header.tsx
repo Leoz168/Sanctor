@@ -7,8 +7,8 @@ import { useState } from "react";
 import { BrandLogo } from "@/components/navigation/brand-logo";
 
 const navItems = [
+  { href: "/post-listings", label: "Listings" },
   { href: "/communities", label: "Communities" },
-  { href: "/post-listings", label: "Post Listing" },
 ];
 
 export function SiteHeader() {

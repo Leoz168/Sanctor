@@ -66,7 +66,7 @@ const listings = [
 
 export default function PostListingsPage() {
   return (
-    <AppShell floatingAction={<FloatingActionButton icon={Plus}>Make a post</FloatingActionButton>}>
+    <AppShell floatingAction={<FloatingActionButton icon={Plus} href="/create-post">Make a post</FloatingActionButton>}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <HousingFilterPanel />
 
