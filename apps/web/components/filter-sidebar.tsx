@@ -134,7 +134,7 @@ export function FilterSidebar({ isOpen, onClose, onApplyFilters }: FilterSidebar
                   max={5000}
                   step={50}
                   value={memberRange}
-                  onValueChange={(value) => setMemberRange(value as [number, number])}
+                  onValueChange={(value: number[]) => setMemberRange(value as [number, number])}
                   className="w-full"
                 />
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
