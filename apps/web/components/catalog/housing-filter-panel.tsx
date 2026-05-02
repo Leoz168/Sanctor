@@ -18,7 +18,7 @@ const housingFilters = [
   },
   {
     label: "Gender Preference",
-    options: ["Any Gender", "Coed", "Female Only", "Male Only"],
+    options: ["Female Only", "Male Only", "Coed"],
     className: "lg:flex-1",
   },
   {
