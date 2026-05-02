@@ -1,10 +1,9 @@
-"use client";
+interface ToggleRowProps {
+  enabled: boolean;
+  onChange: (enabled: boolean) => void;
+}
 
-import { useState } from "react";
-
-export function ToggleRow() {
-  const [enabled, setEnabled] = useState(false);
-
+export function ToggleRow({ enabled, onChange }: ToggleRowProps) {
   return (
     <div className="flex items-center justify-between gap-6 rounded-2xl border border-orange-100 bg-orange-50/40 px-6 py-5">
       <div>
@@ -15,7 +14,7 @@ export function ToggleRow() {
       </div>
       <button
         type="button"
-        onClick={() => setEnabled((current) => !current)}
+        onClick={() => onChange(!enabled)}
         className={`flex h-9 w-16 items-center rounded-full p-1 transition-colors ${
           enabled ? "bg-brand-orange" : "bg-gray-200"
         }`}

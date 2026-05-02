@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, X } from "lucide-react";
+import { Maximize2, MessageCircle, Minimize2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContactsList } from "@/components/messages/contacts-list";
 import { ChatWindow } from "@/components/messages/chat-window";
@@ -110,6 +110,7 @@ const mockMessages: Record<string, Message[]> = {
 
 export function FloatingMessageButton() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [contacts] = useState<Contact[]>(mockContacts);
 
@@ -123,8 +124,13 @@ export function FloatingMessageButton() {
 
   const handleClose = () => {
     setIsOpen(false);
+    setIsExpanded(false);
     setSelectedContact(null);
   };
+
+  const chatPanelClassName = isExpanded
+    ? "fixed bottom-6 right-6 z-50 flex h-[min(720px,calc(100vh-6rem))] w-[min(760px,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-4 fade-in duration-200"
+    : "fixed bottom-6 right-6 z-50 flex h-[600px] w-[calc(100vw-2rem)] max-w-[380px] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-4 fade-in duration-200";
 
   return (
     <>
@@ -138,17 +144,34 @@ export function FloatingMessageButton() {
       </Button>
 
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 flex h-[600px] w-[calc(100vw-2rem)] max-w-[380px] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-4 fade-in duration-200">
+        <div className={chatPanelClassName}>
           <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3">
             <h2 className="font-semibold text-foreground">Messages</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClose}
-              className="h-8 w-8 rounded-full"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsExpanded((expanded) => !expanded)}
+                className="h-8 w-8 rounded-full"
+                aria-label={isExpanded ? "Shrink messages" : "Expand messages"}
+              >
+                {isExpanded ? (
+                  <Minimize2 className="h-4 w-4" />
+                ) : (
+                  <Maximize2 className="h-4 w-4" />
+                )}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleClose}
+                className="h-8 w-8 rounded-full"
+                aria-label="Close messages"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-hidden">

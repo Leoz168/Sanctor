@@ -1,34 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-export function useScrollCollapse(expandDelay = 180) {
+export function useScrollCollapse(topThreshold = 8) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsExpanded(false);
-
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      timeoutRef.current = setTimeout(() => {
-        setIsExpanded(true);
-      }, expandDelay);
+    const syncExpandedState = () => {
+      setIsExpanded(window.scrollY <= topThreshold);
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    syncExpandedState();
+    window.addEventListener("scroll", syncExpandedState, { passive: true });
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
-
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      window.removeEventListener("scroll", syncExpandedState);
     };
-  }, [expandDelay]);
+  }, [topThreshold]);
 
   return isExpanded;
 }
