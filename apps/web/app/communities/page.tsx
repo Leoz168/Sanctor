@@ -12,6 +12,7 @@ type ApiCommunity = {
   name: string;
   description?: string;
   isPrivate: boolean;
+  createdBy?: string;
   createdAt?: string;
 };
 
@@ -25,6 +26,8 @@ type CommunityCardData = {
   postsPerWeek: number;
   image?: string;
   isJoined: boolean;
+  createdBy?: string;
+  isOwner: boolean;
 };
 
 type Institution = {
@@ -38,6 +41,13 @@ type CreateCommunityForm = {
   name: string;
   description: string;
   institutionId: string;
+  isPrivate: boolean;
+};
+
+type ManageCommunityForm = {
+  id: string;
+  name: string;
+  description: string;
   isPrivate: boolean;
 };
 
@@ -113,18 +123,29 @@ export default function CommunitiesPage() {
   const [isInstitutionsLoading, setIsInstitutionsLoading] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState("");
   const [createError, setCreateError] = useState("");
+  const [manageError, setManageError] = useState("");
+  const [modalMode, setModalMode] = useState<"create" | "manage">("create");
   const [form, setForm] = useState<CreateCommunityForm>({
     name: "",
     description: "",
     institutionId: "",
     isPrivate: false,
   });
+  const [manageForm, setManageForm] = useState<ManageCommunityForm>({
+    id: "",
+    name: "",
+    description: "",
+    isPrivate: false,
+  });
 
   const refreshCommunities = async () => {
     const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
     const token = getStoredToken();
+    const currentUserId = getUserIdFromToken(token);
 
     if (!token) {
       setError("Log in first so we can load your communities.");
@@ -154,9 +175,26 @@ export default function CommunitiesPage() {
       postsPerWeek: 0,
       image: fallbackImages[index % fallbackImages.length],
       isJoined: false,
+      createdBy: community.createdBy,
+      isOwner: Boolean(currentUserId) && community.createdBy === currentUserId,
     }));
 
     setCommunities(mapped);
+
+    setManageForm((current) => {
+      const ownedCommunities = mapped.filter((community) => community.isOwner);
+      if (ownedCommunities.length === 0) {
+        return { id: "", name: "", description: "", isPrivate: false };
+      }
+
+      const selected = ownedCommunities.find((community) => community.id === current.id) || ownedCommunities[0];
+      return {
+        id: selected.id,
+        name: selected.name,
+        description: selected.description === "No description yet." ? "" : selected.description,
+        isPrivate: selected.category === "PRIVATE",
+      };
+    });
   };
 
   useEffect(() => {
@@ -216,17 +254,20 @@ export default function CommunitiesPage() {
 
   const openCreateModal = async () => {
     setCreateError("");
+    setManageError("");
     setIsCreateModalOpen(true);
+    setModalMode("create");
     await loadInstitutions();
   };
 
   const closeCreateModal = () => {
-    if (isCreating) {
+    if (isCreating || isUpdating || isDeleting) {
       return;
     }
 
     setIsCreateModalOpen(false);
     setCreateError("");
+    setManageError("");
   };
 
   const handleCreateCommunity = async (event: FormEvent<HTMLFormElement>) => {
@@ -290,6 +331,125 @@ export default function CommunitiesPage() {
     }
   };
 
+  const ownedCommunities = communities.filter((community) => community.isOwner);
+
+  const syncManagedCommunity = (communityID: string) => {
+    const selected = ownedCommunities.find((community) => community.id === communityID);
+    if (!selected) {
+      setManageForm({ id: "", name: "", description: "", isPrivate: false });
+      return;
+    }
+
+    setManageForm({
+      id: selected.id,
+      name: selected.name,
+      description: selected.description === "No description yet." ? "" : selected.description,
+      isPrivate: selected.category === "PRIVATE",
+    });
+  };
+
+  const handleUpdateCommunity = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const token = getStoredToken();
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+
+    if (!token) {
+      setManageError("Log in again so we can verify your account before updating a community.");
+      return;
+    }
+
+    if (!manageForm.id) {
+      setManageError("Choose one of your communities first.");
+      return;
+    }
+
+    if (!manageForm.name.trim()) {
+      setManageError("Give your community a name first.");
+      return;
+    }
+
+    setIsUpdating(true);
+    setManageError("");
+
+    try {
+      const response = await fetch(`${apiBase}/api/communities/update?id=${encodeURIComponent(manageForm.id)}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: manageForm.name.trim(),
+          description: manageForm.description.trim(),
+          isPrivate: manageForm.isPrivate,
+        }),
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Failed to update community.");
+      }
+
+      await refreshCommunities();
+    } catch (err) {
+      setManageError(err instanceof Error ? err.message : "Failed to update community.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteCommunity = async () => {
+    const token = getStoredToken();
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+
+    if (!token) {
+      setManageError("Log in again so we can verify your account before deleting a community.");
+      return;
+    }
+
+    if (!manageForm.id) {
+      setManageError("Choose one of your communities first.");
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete "${manageForm.name}"? This cannot be undone.`);
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setManageError("");
+
+    try {
+      const response = await fetch(`${apiBase}/api/communities/delete?id=${encodeURIComponent(manageForm.id)}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Failed to delete community.");
+      }
+
+      await refreshCommunities();
+
+      const remainingOwnedCommunities = ownedCommunities.filter((community) => community.id !== manageForm.id);
+      if (remainingOwnedCommunities.length === 0) {
+        setModalMode("create");
+        setManageForm({ id: "", name: "", description: "", isPrivate: false });
+      } else {
+        syncManagedCommunity(remainingOwnedCommunities[0].id);
+      }
+    } catch (err) {
+      setManageError(err instanceof Error ? err.message : "Failed to delete community.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <AppShell
       floatingAction={
@@ -327,10 +487,16 @@ export default function CommunitiesPage() {
           <div className="w-full max-w-2xl rounded-[2rem] bg-white p-8 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-bold uppercase tracking-[0.2em] text-brand-orange">Create</p>
-                <h2 className="mt-2 text-3xl font-bold text-gray-900">Start a new community</h2>
+                <p className="text-sm font-bold uppercase tracking-[0.2em] text-brand-orange">
+                  {modalMode === "create" ? "Create" : "Manage"}
+                </p>
+                <h2 className="mt-2 text-3xl font-bold text-gray-900">
+                  {modalMode === "create" ? "Start a new community" : "Update or delete your community"}
+                </h2>
                 <p className="mt-2 text-sm text-gray-500">
-                  This will create the community in Sanctor and make you its owner.
+                  {modalMode === "create"
+                    ? "This will create the community in Sanctor and make you its owner."
+                    : "These actions call the protected community update and delete backend endpoints."}
                 </p>
               </div>
               <button
@@ -342,6 +508,33 @@ export default function CommunitiesPage() {
               </button>
             </div>
 
+            <div className="mt-6 inline-flex rounded-full border border-gray-200 bg-gray-50 p-1">
+              <button
+                type="button"
+                onClick={() => setModalMode("create")}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                  modalMode === "create" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                Create
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setModalMode("manage");
+                  if (ownedCommunities.length > 0 && !manageForm.id) {
+                    syncManagedCommunity(ownedCommunities[0].id);
+                  }
+                }}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                  modalMode === "manage" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                Manage
+              </button>
+            </div>
+
+            {modalMode === "create" ? (
             <form className="mt-8 space-y-6" onSubmit={handleCreateCommunity}>
               <div className="grid gap-6 md:grid-cols-2">
                 <label className="block">
@@ -444,6 +637,106 @@ export default function CommunitiesPage() {
                 </button>
               </div>
             </form>
+            ) : (
+              <form className="mt-8 space-y-6" onSubmit={handleUpdateCommunity}>
+                {ownedCommunities.length === 0 ? (
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4 text-sm text-gray-600">
+                    You do not own any communities yet, so there is nothing to update or delete here.
+                  </div>
+                ) : (
+                  <>
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-semibold text-gray-700">Your communities</span>
+                      <select
+                        value={manageForm.id}
+                        onChange={(event) => syncManagedCommunity(event.target.value)}
+                        className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20"
+                      >
+                        {ownedCommunities.map((community) => (
+                          <option key={community.id} value={community.id}>
+                            {community.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-semibold text-gray-700">Community name</span>
+                      <input
+                        type="text"
+                        value={manageForm.name}
+                        onChange={(event) =>
+                          setManageForm((current) => ({
+                            ...current,
+                            name: event.target.value,
+                          }))
+                        }
+                        className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-semibold text-gray-700">Description</span>
+                      <textarea
+                        value={manageForm.description}
+                        onChange={(event) =>
+                          setManageForm((current) => ({
+                            ...current,
+                            description: event.target.value,
+                          }))
+                        }
+                        rows={5}
+                        className="w-full rounded-3xl border border-gray-200 bg-white px-4 py-4 text-sm text-gray-900 outline-none transition focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20"
+                      />
+                    </label>
+
+                    <label className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-brand-cream/60 px-4 py-4">
+                      <input
+                        type="checkbox"
+                        checked={manageForm.isPrivate}
+                        onChange={(event) =>
+                          setManageForm((current) => ({
+                            ...current,
+                            isPrivate: event.target.checked,
+                          }))
+                        }
+                        className="h-4 w-4 rounded border-gray-300 text-brand-orange focus:ring-brand-orange/30"
+                      />
+                      <span>
+                        <span className="block text-sm font-semibold text-gray-900">Private community</span>
+                        <span className="block text-sm text-gray-500">
+                          This maps directly to the update endpoint&apos;s `isPrivate` field.
+                        </span>
+                      </span>
+                    </label>
+                  </>
+                )}
+
+                {manageError ? (
+                  <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {manageError}
+                  </div>
+                ) : null}
+
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+                  <button
+                    type="button"
+                    onClick={handleDeleteCommunity}
+                    disabled={ownedCommunities.length === 0 || isUpdating || isDeleting}
+                    className="rounded-full border border-red-200 px-5 py-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isDeleting ? "Deleting..." : "Delete community"}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={ownedCommunities.length === 0 || isUpdating || isDeleting}
+                    className="rounded-full bg-brand-orange px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-orange/20 transition-all hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isUpdating ? "Saving..." : "Save changes"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       ) : null}
