@@ -3,20 +3,20 @@ import { Plus } from "lucide-react";
 
 export function ProfileAvatar() {
   return (
-    <div className="relative h-36 w-36 shrink-0 rounded-[2rem] border-8 border-orange-50 bg-orange-50 shadow-xl shadow-orange-900/10">
+    <div className="relative h-28 w-28 shrink-0 rounded-[1.5rem] border-6 border-orange-50 bg-orange-50 shadow-xl shadow-orange-900/10">
       <Image
         src="/images/community-4.jpg"
         alt="Alex Rivera profile photo"
         fill
-        sizes="144px"
-        className="rounded-[1.5rem] object-cover"
+        sizes="112px"
+        className="rounded-[1.15rem] object-cover"
       />
       <button
         type="button"
-        className="absolute -bottom-3 -right-3 flex h-12 w-12 items-center justify-center rounded-2xl border-4 border-white bg-gray-900 text-white shadow-lg transition-transform hover:scale-105"
+        className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-xl border-4 border-white bg-gray-900 text-white shadow-lg transition-transform hover:scale-105"
         aria-label="Upload profile photo"
       >
-        <Plus className="h-6 w-6" />
+        <Plus className="h-5 w-5" />
       </button>
     </div>
   );

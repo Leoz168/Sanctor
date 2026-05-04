@@ -2,16 +2,16 @@ import { Mail } from "lucide-react";
 
 export function ProfileContactCard() {
   return (
-    <div className="flex items-center gap-4 rounded-3xl border border-orange-100 bg-brand-cream px-5 py-4">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-brand-orange shadow-sm">
-        <Mail className="h-5 w-5" />
+    <div className="flex items-center gap-3 rounded-2xl border border-orange-100 bg-brand-cream px-4 py-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-brand-orange shadow-sm">
+        <Mail className="h-4 w-4" />
       </div>
 
       <div className="min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
           Contact email
         </p>
-        <p className="mt-1 text-lg font-bold text-gray-900">
+        <p className="mt-0.5 text-base font-bold text-gray-900">
           alex.rivera@school.edu
         </p>
       </div>

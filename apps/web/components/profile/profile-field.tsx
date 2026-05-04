@@ -1,5 +1,5 @@
 const fieldClassName =
-  "h-16 w-full rounded-2xl border border-gray-100 bg-gray-50 px-6 text-base font-bold text-gray-800 shadow-inner shadow-gray-900/5 outline-none transition-all focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-brand-orange/10";
+  "h-12 w-full rounded-2xl border border-gray-100 bg-gray-50 px-5 text-sm font-bold text-gray-800 shadow-inner shadow-gray-900/5 outline-none transition-all focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-brand-orange/10";
 
 interface ProfileFieldProps {
   label: string;
@@ -34,7 +34,7 @@ export function GenderSelect() {
 
 export function FieldLabel({ children }: { children: string }) {
   return (
-    <span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.24em] text-gray-400">
+    <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.22em] text-gray-400">
       {children}
     </span>
   );
