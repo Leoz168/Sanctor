@@ -56,10 +56,8 @@ func googleClaimsFromPayload(payload *idtoken.Payload) *GoogleClaims {
 		return claims
 	}
 	claims.Subject = payload.Subject
-	claims.Email = payload.Email
-	claims.EmailVerified = payload.EmailVerified
 
-	if value, ok := payload.Claims["email"].(string); ok && claims.Email == "" {
+	if value, ok := payload.Claims["email"].(string); ok {
 		claims.Email = value
 	}
 	if value, ok := payload.Claims["email_verified"].(bool); ok {
