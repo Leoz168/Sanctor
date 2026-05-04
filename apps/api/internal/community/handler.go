@@ -10,6 +10,15 @@ import (
 	"github.com/google/uuid"
 )
 
+func currentUserIDFromContext(r *http.Request) (uuid.UUID, error) {
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok || userID == "" {
+		return uuid.Nil, http.ErrNoCookie
+	}
+
+	return uuid.Parse(userID)
+}
+
 // Initialize repository, service, and messaging (defaults to in-memory)
 var (
 	repo      Repository = NewRepository()
@@ -139,9 +148,19 @@ func UpdateCommunity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	community, err := service.UpdateCommunity(communityID, req)
+	requestingUserID, err := currentUserIDFromContext(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	community, err := service.UpdateCommunity(requestingUserID, communityID, req)
+	if err != nil {
+		status := http.StatusNotFound
+		if err.Error() == "forbidden: only the creator or owner can modify this community" {
+			status = http.StatusForbidden
+		}
+		http.Error(w, err.Error(), status)
 		return
 	}
 
@@ -176,8 +195,18 @@ func DeleteCommunity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := service.DeleteCommunity(communityID); err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+	requestingUserID, err := currentUserIDFromContext(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := service.DeleteCommunity(requestingUserID, communityID); err != nil {
+		status := http.StatusNotFound
+		if err.Error() == "forbidden: only the creator or owner can modify this community" {
+			status = http.StatusForbidden
+		}
+		http.Error(w, err.Error(), status)
 		return
 	}
 
