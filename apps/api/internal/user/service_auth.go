@@ -65,7 +65,7 @@ func (s *Service) ExistsByUsername(username string) bool {
 }
 
 // LinkGoogleSub attaches a Google subject to an existing user.
-func (s *Service) LinkGoogleSub(userID uuid.UUID, sub string, emailVerified bool, picture string, firstName string, lastName string) (*User, error) {
+func (s *Service) LinkGoogleSub(userID uuid.UUID, sub string, emailVerified bool, picture string) (*User, error) {
 	user, err := s.repo.FindByID(userID)
 	if err != nil {
 		return nil, errors.New("user not found")
@@ -79,12 +79,6 @@ func (s *Service) LinkGoogleSub(userID uuid.UUID, sub string, emailVerified bool
 	}
 	if user.Avatar == "" && picture != "" {
 		user.Avatar = picture
-	}
-	if user.FirstName == "" && firstName != "" {
-		user.FirstName = firstName
-	}
-	if user.LastName == "" && lastName != "" {
-		user.LastName = lastName
 	}
 	user.UpdatedAt = time.Now()
 

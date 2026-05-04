@@ -9,12 +9,10 @@ register_user() {
   local email="$1"
   local username="$2"
   local password="$3"
-  local first_name="$4"
-  local last_name="$5"
 
   curl -s -X POST "$API_BASE_URL/api/auth/register" \
     -H "Content-Type: application/json" \
-    -d "{\"email\":\"$email\",\"username\":\"$username\",\"password\":\"$password\",\"firstName\":\"$first_name\",\"lastName\":\"$last_name\"}" >/dev/null || true
+    -d "{\"email\":\"$email\",\"username\":\"$username\",\"password\":\"$password\"}" >/dev/null || true
 }
 
 login_and_extract_token() {
@@ -32,8 +30,8 @@ extract_user_id() {
   TOKEN="$token" node -e 'const payload=JSON.parse(Buffer.from(process.env.TOKEN.split(".")[1],"base64url").toString()); process.stdout.write(payload.userId)'
 }
 
-register_user "$ALICE_EMAIL" "$ALICE_USERNAME" "$ALICE_PASSWORD" "$ALICE_FIRST_NAME" "$ALICE_LAST_NAME"
-register_user "$BOB_EMAIL" "$BOB_USERNAME" "$BOB_PASSWORD" "$BOB_FIRST_NAME" "$BOB_LAST_NAME"
+register_user "$ALICE_EMAIL" "$ALICE_USERNAME" "$ALICE_PASSWORD"
+register_user "$BOB_EMAIL" "$BOB_USERNAME" "$BOB_PASSWORD"
 
 ALICE_TOKEN="$(login_and_extract_token "$ALICE_EMAIL" "$ALICE_PASSWORD")"
 BOB_TOKEN="$(login_and_extract_token "$BOB_EMAIL" "$BOB_PASSWORD")"

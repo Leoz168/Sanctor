@@ -110,8 +110,6 @@ func (s *Service) Register(req RegisterRequest) (*AuthResponse, error) {
 	userReq := user.CreateUserRequest{
 		Email:     req.Email,
 		Username:  req.Username,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
 		Password:  req.Password,
 	}
 	u, err := s.userService.CreateUser(userReq)
@@ -161,7 +159,7 @@ func (s *Service) LoginWithGoogle(ctx context.Context, req GoogleAuthRequest) (*
 		if existingByEmail.GoogleSub != nil && *existingByEmail.GoogleSub != claims.Subject {
 			return nil, ErrGoogleAccountInUse
 		}
-		if _, err := s.userService.LinkGoogleSub(existingByEmail.ID, claims.Subject, claims.EmailVerified, claims.Picture, claims.FirstName, claims.LastName); err != nil {
+		if _, err := s.userService.LinkGoogleSub(existingByEmail.ID, claims.Subject, claims.EmailVerified, claims.Picture); err != nil {
 			if err.Error() == "google account already linked" {
 				return nil, ErrGoogleAccountInUse
 			}
@@ -175,8 +173,6 @@ func (s *Service) LoginWithGoogle(ctx context.Context, req GoogleAuthRequest) (*
 	userReq := user.CreateUserRequest{
 		Email:     claims.Email,
 		Username:  username,
-		FirstName: claims.FirstName,
-		LastName:  claims.LastName,
 		Password:  password,
 	}
 
@@ -184,7 +180,7 @@ func (s *Service) LoginWithGoogle(ctx context.Context, req GoogleAuthRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.userService.LinkGoogleSub(createdUser.ID, claims.Subject, claims.EmailVerified, claims.Picture, claims.FirstName, claims.LastName); err != nil {
+	if _, err := s.userService.LinkGoogleSub(createdUser.ID, claims.Subject, claims.EmailVerified, claims.Picture); err != nil {
 		if err.Error() == "google account already linked" {
 			return nil, ErrGoogleAccountInUse
 		}
@@ -230,7 +226,7 @@ func (s *Service) LinkGoogleAccount(ctx context.Context, userID uuid.UUID, req G
 		return ErrGoogleEmailMismatch
 	}
 
-	_, err = s.userService.LinkGoogleSub(userID, claims.Subject, claims.EmailVerified, claims.Picture, claims.FirstName, claims.LastName)
+	_, err = s.userService.LinkGoogleSub(userID, claims.Subject, claims.EmailVerified, claims.Picture)
 	if err != nil && err.Error() == "google account already linked" {
 		return ErrGoogleAccountInUse
 	}
