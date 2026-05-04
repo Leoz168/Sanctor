@@ -1,11 +1,10 @@
 package community
 
 import (
-    "errors"
-    "testing"
-    "time"
+	"errors"
+	"testing"
 
-    "github.com/google/uuid"
+	"github.com/google/uuid"
 )
 
 var (
@@ -61,7 +60,7 @@ func TestAddUserToCommunityValidations(t *testing.T){
     err := svc.AddUserToCommunity(AddUserToCommunityRequest{UserID: "", CommunityID: ""})
     if err==nil { t.Fatalf("expected validation error") }
     // invalid role
-    _, _ = uuid.NewUUID()
+    repo.created = &Community{ID: commCreator}
     err = svc.AddUserToCommunity(AddUserToCommunityRequest{UserID: commCreator.String(), CommunityID: commCreator.String(), Role: "bad"})
     if err==nil || err.Error()!="invalid role: must be member, admin, or owner" { t.Fatalf("expected invalid role") }
 }

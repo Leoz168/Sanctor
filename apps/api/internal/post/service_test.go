@@ -4,7 +4,9 @@ import (
     "context"
     "errors"
     "testing"
+
     "github.com/google/uuid"
+    "sanctor/internal/events"
 )
 
 type postStubRepo struct{
@@ -18,12 +20,6 @@ func (r *postStubRepo) Search(filters PostSearchFilters) ([]*Post, error){ retur
 func (r *postStubRepo) Update(post *Post) error { return nil }
 func (r *postStubRepo) Delete(id uuid.UUID) error { return nil }
 
-type stubPublisher struct{}
-func (p *stubPublisher) PublishPostCreated(ctx context.Context, event PostCreatedEvent) error { return nil }
-func (p *stubPublisher) PublishPostUpdated(ctx context.Context, event PostUpdatedEvent) error { return nil }
-func (p *stubPublisher) PublishPostDeleted(ctx context.Context, event PostDeletedEvent) error { return nil }
-func (p *stubPublisher) PublishPostViewed(ctx context.Context, event PostViewedEvent) error { return nil }
-
 func TestParseUUIDsInvalid(t *testing.T){
     _, err := parseUUIDs([]string{"not-uuid"})
     if err==nil { t.Fatalf("expected invalid uuid error") }
@@ -35,7 +31,7 @@ func TestUniqueIDsFilters(t *testing.T){
 }
 
 func TestCreatePostValidationUser(t *testing.T){
-    svc := NewService(&postStubRepo{}, &stubPublisher{})
+    svc := NewService(&postStubRepo{}, events.NewStubPublisher())
     _, err := svc.CreatePost(context.Background(), &CreatePostRequest{UserID: ""})
     if err==nil || err.Error()!="userId is required" { t.Fatalf("expected userId required") }
     _, err = svc.CreatePost(context.Background(), &CreatePostRequest{UserID: "bad-uuid"})
@@ -44,7 +40,7 @@ func TestCreatePostValidationUser(t *testing.T){
 
 func TestGetPostNotFoundAndPublish(t *testing.T){
     repo := &postStubRepo{findErr: errors.New("not found")}
-    svc := NewService(repo, &stubPublisher{})
+    svc := NewService(repo, events.NewStubPublisher())
     _, err := svc.GetPost(context.Background(), uuid.New())
     if err==nil { t.Fatalf("expected not found") }
 }

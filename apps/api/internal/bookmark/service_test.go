@@ -1,11 +1,10 @@
 package bookmark
 
 import (
-    "errors"
-    "testing"
-    "time"
+	"testing"
+	"time"
 
-    "github.com/google/uuid"
+	"github.com/google/uuid"
 )
 
 var (
