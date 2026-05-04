@@ -9,9 +9,8 @@ import {
 
 const profileNavItems = [
   { label: "Profile", icon: User, isActive: true },
-  { label: "Bio", icon: MessageSquare },
-  { label: "Communities", icon: Building2 },
   { label: "Posted Listings", icon: Home },
+  { label: "Communities", icon: Building2 },
   { label: "Bookmarked Listings", icon: Bookmark },
   { label: "My Account", icon: Star },
 ];
