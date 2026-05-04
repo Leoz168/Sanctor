@@ -34,12 +34,12 @@ export function SiteHeader() {
             ))}
             <div className="h-4 w-px bg-gray-200" />
             <Link
-              href="/login"
+              href="/profile"
               className="flex items-center gap-2 px-5 py-2.5 bg-brand-orange text-white rounded-full font-medium shadow-md hover:shadow-lg hover:bg-orange-600 transition-all active:scale-95"
-              id="nav-login"
+              id="nav-profile"
             >
               <User size={18} />
-              <span>Login</span>
+              <span>My Profile</span>
             </Link>
           </div>
 
@@ -67,12 +67,12 @@ export function SiteHeader() {
             </Link>
           ))}
           <Link
-            href="/login"
+            href="/profile"
             onClick={() => setIsMenuOpen(false)}
             className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-brand-orange text-white rounded-full font-medium"
           >
             <User size={18} />
-            <span>Login</span>
+            <span>My Profile</span>
           </Link>
         </div>
       )}
