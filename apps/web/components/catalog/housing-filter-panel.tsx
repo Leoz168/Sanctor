@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { AutoCollapsingFilterShell } from "@/components/catalog/auto-collapsing-filter-shell";
 import { SelectControl } from "@/components/forms/select-control";
 
@@ -32,7 +33,18 @@ export function HousingFilterPanel() {
   const [maxPrice, setMaxPrice] = useState(3000);
 
   return (
-    <AutoCollapsingFilterShell expandedHeightClassName="h-[430px] sm:h-[322px] lg:h-[178px]">
+    <AutoCollapsingFilterShell
+      expandedHeightClassName="h-[430px] sm:h-[322px] lg:h-[178px]"
+      action={
+        <Link
+          href="/create-post"
+          className="inline-flex items-center gap-2 rounded-full bg-brand-orange px-5 py-3 text-sm font-bold text-white shadow-xl shadow-brand-orange/25 transition-all hover:bg-orange-600 active:scale-95"
+        >
+          <Plus className="h-5 w-5" />
+          <span>Post listing</span>
+        </Link>
+      }
+    >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />

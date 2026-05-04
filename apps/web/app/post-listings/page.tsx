@@ -1,5 +1,3 @@
-import { Plus } from "lucide-react";
-import { FloatingActionButton } from "@/components/catalog/floating-action-button";
 import { HousingFilterPanel } from "@/components/catalog/housing-filter-panel";
 import { AppShell } from "@/components/layout/app-shell";
 import { ListingCard } from "@/components/listing-card";
@@ -66,7 +64,7 @@ const listings = [
 
 export default function PostListingsPage() {
   return (
-    <AppShell floatingAction={<FloatingActionButton icon={Plus} href="/create-post" placement="top-right">Make a post</FloatingActionButton>}>
+    <AppShell>
       <div className="max-w-7xl mx-auto px-4 pb-10 sm:px-6 lg:px-8">
         <HousingFilterPanel />
 
