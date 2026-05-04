@@ -1,8 +1,11 @@
 import { HousingFilterPanel } from "@/components/catalog/housing-filter-panel";
+import {
+  PaginatedListingsGrid,
+  type PaginatedListing,
+} from "@/components/catalog/paginated-listings-grid";
 import { AppShell } from "@/components/layout/app-shell";
-import { ListingCard } from "@/components/listing-card";
 
-const listings = [
+const baseListings: PaginatedListing[] = [
   {
     id: 1,
     title: "Modern Studio near campus",
@@ -62,17 +65,26 @@ const listings = [
   },
 ];
 
+const listings: PaginatedListing[] = Array.from({ length: 42 }, (_, index) => {
+  const template = baseListings[index % baseListings.length];
+  const cycle = Math.floor(index / baseListings.length);
+
+  return {
+    ...template,
+    id: index + 1,
+    title: cycle === 0 ? template.title : `${template.title} ${cycle + 1}`,
+    price: template.price + cycle * 45,
+    badge: index === 0 ? "featured" : index % 7 === 0 ? "new" : undefined,
+  };
+});
+
 export default function PostListingsPage() {
   return (
     <AppShell>
       <div className="max-w-7xl mx-auto px-4 pb-10 sm:px-6 lg:px-8">
         <HousingFilterPanel />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {listings.map((listing) => (
-            <ListingCard key={listing.id} {...listing} />
-          ))}
-        </div>
+        <PaginatedListingsGrid listings={listings} pageSize={20} />
       </div>
     </AppShell>
   );
