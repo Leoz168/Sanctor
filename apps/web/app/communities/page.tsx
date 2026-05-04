@@ -1,10 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { MessageSquare } from "lucide-react";
+import { CommunityFilterPanel } from "@/components/catalog/community-filter-panel";
 import { CommunityCard } from "@/components/community-card";
-import { FilterToolbar } from "@/components/catalog/filter-toolbar";
-import { FloatingActionButton } from "@/components/catalog/floating-action-button";
 import { AppShell } from "@/components/layout/app-shell";
 
 type ApiCommunity = {
@@ -55,19 +53,6 @@ const fallbackImages = [
   "/images/community-1.jpg",
   "/images/community-4.jpg",
   "/images/community-5.jpg",
-];
-
-const filters = [
-  {
-    label: "Community category",
-    options: ["All Categories", "Public", "Private"],
-    className: "sm:w-44",
-  },
-  {
-    label: "Sort communities",
-    options: ["Newest", "Name A-Z"],
-    className: "sm:w-40",
-  },
 ];
 
 function slugify(value: string) {
@@ -451,15 +436,9 @@ export default function CommunitiesPage() {
   };
 
   return (
-    <AppShell
-      floatingAction={
-        <FloatingActionButton icon={MessageSquare} onClick={openCreateModal}>
-          Create a community
-        </FloatingActionButton>
-      }
-    >
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <FilterToolbar searchPlaceholder="Find communities..." filters={filters} />
+    <AppShell>
+      <div className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
+        <CommunityFilterPanel onCreateCommunity={openCreateModal} />
 
         {isLoading ? (
           <div className="rounded-[2rem] border border-gray-100 bg-white p-10 text-center text-gray-500 shadow-sm">

@@ -31,11 +31,11 @@ export function AutoCollapsingFilterShell({
             : "pointer-events-none -translate-y-full opacity-0"
         }`}
       >
-        <div className="mx-auto flex max-w-[92rem] items-start gap-4 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-[92rem] flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-start lg:px-8">
           <div className="min-w-0 flex-1 space-y-3">
             {children}
           </div>
-          {action && <div className="shrink-0 pt-0.5">{action}</div>}
+          {action && <div className="shrink-0 self-start lg:pt-0.5">{action}</div>}
         </div>
       </div>
     </>
