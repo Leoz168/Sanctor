@@ -115,10 +115,18 @@ func (s *Service) GetAllCommunities() ([]*Community, error) {
 }
 
 // UpdateCommunity updates an existing community
-func (s *Service) UpdateCommunity(id uuid.UUID, req UpdateCommunityRequest) (*Community, error) {
+func (s *Service) UpdateCommunity(requestingUserID, id uuid.UUID, req UpdateCommunityRequest) (*Community, error) {
+	if requestingUserID == uuid.Nil {
+		return nil, errors.New("requesting user ID is required")
+	}
+
 	community, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, errors.New("community not found")
+	}
+
+	if err := s.ensureCommunityMutationAccess(requestingUserID, community); err != nil {
+		return nil, err
 	}
 
 	// Update fields if provided
@@ -141,9 +149,22 @@ func (s *Service) UpdateCommunity(id uuid.UUID, req UpdateCommunityRequest) (*Co
 }
 
 // DeleteCommunity deletes a community by ID
-func (s *Service) DeleteCommunity(id uuid.UUID) error {
+func (s *Service) DeleteCommunity(requestingUserID, id uuid.UUID) error {
+	if requestingUserID == uuid.Nil {
+		return errors.New("requesting user ID is required")
+	}
+
 	if id == uuid.Nil {
 		return errors.New("community ID is required")
+	}
+
+	community, err := s.repo.FindByID(id)
+	if err != nil {
+		return errors.New("community not found")
+	}
+
+	if err := s.ensureCommunityMutationAccess(requestingUserID, community); err != nil {
+		return err
 	}
 
 	return s.repo.Delete(id)
@@ -253,4 +274,21 @@ func (s *Service) IsUserInCommunity(userID, communityID uuid.UUID) bool {
 // GetUserRole returns a user's role in a community
 func (s *Service) GetUserRole(userID, communityID uuid.UUID) (string, error) {
 	return s.repo.GetUserRole(userID, communityID)
+}
+
+func (s *Service) ensureCommunityMutationAccess(requestingUserID uuid.UUID, community *Community) error {
+	if community == nil {
+		return errors.New("community not found")
+	}
+
+	if community.CreatedBy == requestingUserID {
+		return nil
+	}
+
+	role, err := s.repo.GetUserRole(requestingUserID, community.ID)
+	if err == nil && role == "owner" {
+		return nil
+	}
+
+	return errors.New("forbidden: only the creator or owner can modify this community")
 }
