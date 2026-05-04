@@ -5,8 +5,6 @@ export interface User {
   id: string;
   email: string;
   username: string;
-  firstName: string;
-  lastName: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -14,15 +12,11 @@ export interface User {
 export interface CreateUserRequest {
   email: string;
   username: string;
-  firstName: string;
-  lastName: string;
   password: string;
 }
 
 export interface UpdateUserRequest {
   email?: string;
-  firstName?: string;
-  lastName?: string;
 }
 
 export interface ApiResponse<T> {
