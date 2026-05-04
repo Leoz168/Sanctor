@@ -1,6 +1,22 @@
 version: '3.8'
 
 services:
+  backend-tests:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: builder
+    container_name: sanctor-backend-tests
+    working_dir: /app
+    env_file:
+      - .env
+    environment:
+      - GO_ENV=test
+    networks:
+      - sanctor-network
+    restart: "no"
+    command: ["go", "test", "./internal/..."]
+
   backend:
     build:
       context: ./apps/api
@@ -15,7 +31,10 @@ services:
       - PORT=8080
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
     depends_on:
-      - redis
+      backend-tests:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
     networks:
       - sanctor-network
     restart: unless-stopped

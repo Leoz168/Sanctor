@@ -34,6 +34,7 @@ export default function RegisterPage() {
         description="Create your account and personalize your campus housing search."
         fields={fields}
         submitLabel="Create account"
+        googleLabel="Sign up with Google"
         footerText="Already have an account?"
         footerLinkLabel="Login"
         footerHref="/login"
