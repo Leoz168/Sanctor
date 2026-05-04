@@ -12,8 +12,6 @@ type User struct {
 	ID            uuid.UUID          `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
 	Email         string             `json:"email" gorm:"type:varchar(255);not null;uniqueIndex"`
 	Username      string             `json:"username" gorm:"type:varchar(100);not null;uniqueIndex"`
-	FirstName     string             `json:"firstName" gorm:"type:varchar(100)"`
-	LastName      string             `json:"lastName" gorm:"type:varchar(100)"`
 	PasswordHash  string             `json:"-" gorm:"type:varchar(255);not null"`
 	GoogleSub     *string            `json:"-" gorm:"type:varchar(255);uniqueIndex"`
 	Avatar        string             `json:"avatar,omitempty" gorm:"type:varchar(500)"`
@@ -30,21 +28,11 @@ type User struct {
 	Major         *string            `json:"major,omitempty" gorm:"type:varchar(100)"`
 }
 
-// FullName returns the user's full name
-func (u *User) FullName() string {
-	if u.FirstName != "" && u.LastName != "" {
-		return u.FirstName + " " + u.LastName
-	}
-	return u.Username
-}
-
 // ToPublicUser returns a user object safe for public display
 func (u *User) ToPublicUser() *PublicUser {
 	return &PublicUser{
 		ID:            u.ID,
 		Username:      u.Username,
-		FirstName:     u.FirstName,
-		LastName:      u.LastName,
 		Avatar:        u.Avatar,
 		Bio:           u.Bio,
 		Gender:        u.Gender,
@@ -59,8 +47,6 @@ func (u *User) ToPublicUser() *PublicUser {
 type PublicUser struct {
 	ID            uuid.UUID          `json:"id"`
 	Username      string             `json:"username"`
-	FirstName     string             `json:"firstName,omitempty"`
-	LastName      string             `json:"lastName,omitempty"`
 	Avatar        string             `json:"avatar,omitempty"`
 	Bio           string             `json:"bio,omitempty"`
 	Gender        sharedtypes.Gender `json:"gender,omitempty"`
@@ -74,8 +60,6 @@ type PublicUser struct {
 type CreateUserRequest struct {
 	Email         string             `json:"email"`
 	Username      string             `json:"username"`
-	FirstName     string             `json:"firstName"`
-	LastName      string             `json:"lastName"`
 	Password      string             `json:"password"`
 	Gender        sharedtypes.Gender `json:"gender,omitempty"`
 	Age           *int               `json:"age,omitempty"`
@@ -86,8 +70,6 @@ type CreateUserRequest struct {
 // UpdateUserRequest represents the data that can be updated
 type UpdateUserRequest struct {
 	Email         string             `json:"email,omitempty"`
-	FirstName     string             `json:"firstName,omitempty"`
-	LastName      string             `json:"lastName,omitempty"`
 	Avatar        string             `json:"avatar,omitempty"`
 	Bio           string             `json:"bio,omitempty"`
 	Gender        sharedtypes.Gender `json:"gender,omitempty"`

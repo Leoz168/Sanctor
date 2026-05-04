@@ -19,14 +19,14 @@ echo
 echo "== Register Alice =="
 curl -s -X POST "$API_BASE_URL/api/auth/register" \
   -H "Content-Type: application/json" \
-  -d '{"email":"'$ALICE_EMAIL'","username":"'$ALICE_USERNAME'","password":"'$ALICE_PASSWORD'","firstName":"Alice","lastName":"DM"}' || true
+  -d '{"email":"'$ALICE_EMAIL'","username":"'$ALICE_USERNAME'","password":"'$ALICE_PASSWORD'"}' || true
 echo
 echo
 
 echo "== Register Bob =="
 curl -s -X POST "$API_BASE_URL/api/auth/register" \
   -H "Content-Type: application/json" \
-  -d '{"email":"'$BOB_EMAIL'","username":"'$BOB_USERNAME'","password":"'$BOB_PASSWORD'","firstName":"Bob","lastName":"DM"}' || true
+  -d '{"email":"'$BOB_EMAIL'","username":"'$BOB_USERNAME'","password":"'$BOB_PASSWORD'"}' || true
 echo
 echo
 

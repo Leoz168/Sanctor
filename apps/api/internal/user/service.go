@@ -73,8 +73,6 @@ func (s *Service) CreateUser(req CreateUserRequest) (*User, error) {
 		ID:            uuid.New(),
 		Email:         req.Email,
 		Username:      req.Username,
-		FirstName:     req.FirstName,
-		LastName:      req.LastName,
 		PasswordHash:  hashedPassword,
 		Gender:        req.Gender,
 		Age:           req.Age,
@@ -123,12 +121,6 @@ func (s *Service) UpdateUser(id uuid.UUID, req UpdateUserRequest) (*User, error)
 	// Update fields if provided
 	if req.Email != "" {
 		user.Email = req.Email
-	}
-	if req.FirstName != "" {
-		user.FirstName = req.FirstName
-	}
-	if req.LastName != "" {
-		user.LastName = req.LastName
 	}
 	if req.Avatar != "" {
 		user.Avatar = req.Avatar

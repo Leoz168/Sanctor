@@ -8,8 +8,6 @@ type User struct {
 	ID        string    `json:"id"`
 	Email     string    `json:"email"`
 	Username  string    `json:"username"`
-	FirstName string    `json:"firstName"`
-	LastName  string    `json:"lastName"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -18,16 +16,12 @@ type User struct {
 type CreateUserRequest struct {
 	Email     string `json:"email"`
 	Username  string `json:"username"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
 	Password  string `json:"password"`
 }
 
 // UpdateUserRequest represents the data that can be updated
 type UpdateUserRequest struct {
 	Email     string `json:"email,omitempty"`
-	FirstName string `json:"firstName,omitempty"`
-	LastName  string `json:"lastName,omitempty"`
 }
 
 // ApiResponse represents a generic API response

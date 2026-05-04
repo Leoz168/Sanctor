@@ -27,17 +27,17 @@ func (r *PostgresRepository) Create(user *User) error {
 
 	query := `
 		INSERT INTO users (
-			id, email, username, first_name, last_name, password_hash,
-			google_sub, avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
+			id, email, username, password_hash, google_sub,
+			avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
 			created_at, updated_at, gender, age, institution_id, major
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 	`
 
 	_, err := r.db.Exec(query,
-		user.ID, user.Email, user.Username, user.FirstName, user.LastName,
-		user.PasswordHash, user.GoogleSub, user.Avatar, user.Bio, user.IsActive, user.IsVerified,
-		user.IsBlacklisted, user.LastLoginAt, user.CreatedAt, user.UpdatedAt,
-		user.Gender, user.Age, user.InstitutionID, user.Major,
+		user.ID, user.Email, user.Username, user.PasswordHash, user.GoogleSub,
+		user.Avatar, user.Bio, user.IsActive, user.IsVerified, user.IsBlacklisted,
+		user.LastLoginAt, user.CreatedAt, user.UpdatedAt, user.Gender,
+		user.Age, user.InstitutionID, user.Major,
 	)
 
 	return err
@@ -47,16 +47,16 @@ func (r *PostgresRepository) Create(user *User) error {
 func (r *PostgresRepository) FindByID(id uuid.UUID) (*User, error) {
 	user := &User{}
 	query := `
-		SELECT id, email, username, first_name, last_name, password_hash,
-		       google_sub, avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
+		SELECT id, email, username, password_hash, google_sub,
+		       avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
 		       created_at, updated_at, gender, age, institution_id, major
 		FROM users WHERE id = $1
 	`
 
 	var googleSub sql.NullString
 	err := r.db.QueryRow(query, id).Scan(
-		&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
-		&user.PasswordHash, &googleSub, &user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
+		&user.ID, &user.Email, &user.Username, &user.PasswordHash, &googleSub,
+		&user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
 		&user.IsBlacklisted, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
 		&user.Gender, &user.Age, &user.InstitutionID, &user.Major,
 	)
@@ -77,7 +77,7 @@ func (r *PostgresRepository) FindByID(id uuid.UUID) (*User, error) {
 // FindAll retrieves all users
 func (r *PostgresRepository) FindAll() []*User {
 	query := `
-		SELECT id, email, username, first_name, last_name, password_hash,
+		SELECT id, email, username, password_hash,
 		       google_sub, avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
 		       created_at, updated_at, gender, age, institution_id, major
 		FROM users
@@ -95,8 +95,8 @@ func (r *PostgresRepository) FindAll() []*User {
 		user := &User{}
 		var googleSub sql.NullString
 		err := rows.Scan(
-			&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
-			&user.PasswordHash, &googleSub, &user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
+			&user.ID, &user.Email, &user.Username, &user.PasswordHash, &googleSub,
+			&user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
 			&user.IsBlacklisted, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
 			&user.Gender, &user.Age, &user.InstitutionID, &user.Major,
 		)
@@ -119,18 +119,18 @@ func (r *PostgresRepository) Update(user *User) error {
 
 	query := `
 		UPDATE users SET
-			email = $2, username = $3, first_name = $4, last_name = $5,
-			password_hash = $6, google_sub = $7, avatar = $8, bio = $9, is_active = $10,
-			is_verified = $11, is_blacklisted = $12, last_login_at = $13, updated_at = $14,
-			gender = $15, age = $16, institution_id = $17, major = $18
+			email = $2, username = $3, password_hash = $4, google_sub = $5,
+			avatar = $6, bio = $7, is_active = $8, is_verified = $9,
+			is_blacklisted = $10, last_login_at = $11, updated_at = $12,
+			gender = $13, age = $14, institution_id = $15, major = $16
 		WHERE id = $1
 	`
 
 	result, err := r.db.Exec(query,
-		user.ID, user.Email, user.Username, user.FirstName, user.LastName,
-		user.PasswordHash, user.GoogleSub, user.Avatar, user.Bio, user.IsActive, user.IsVerified,
-		user.IsBlacklisted, user.LastLoginAt, user.UpdatedAt,
-		user.Gender, user.Age, user.InstitutionID, user.Major,
+		user.ID, user.Email, user.Username, user.PasswordHash, user.GoogleSub,
+		user.Avatar, user.Bio, user.IsActive, user.IsVerified,
+		user.IsBlacklisted, user.LastLoginAt, user.UpdatedAt, user.Gender,
+		user.Age, user.InstitutionID, user.Major,
 	)
 	if err != nil {
 		return err
@@ -201,16 +201,16 @@ func (r *PostgresRepository) ExistsByUsername(username string) bool {
 func (r *PostgresRepository) FindByEmail(email string) (*User, error) {
 	user := &User{}
 	query := `
-		SELECT id, email, username, first_name, last_name, password_hash,
-		       google_sub, avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
+		SELECT id, email, username, password_hash, google_sub,
+		       avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
 		       created_at, updated_at, gender, age, institution_id, major
 		FROM users WHERE email = $1
 	`
 
 	var googleSub sql.NullString
 	err := r.db.QueryRow(query, email).Scan(
-		&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
-		&user.PasswordHash, &googleSub, &user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
+		&user.ID, &user.Email, &user.Username, &user.PasswordHash, &googleSub,
+		&user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
 		&user.IsBlacklisted, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
 		&user.Gender, &user.Age, &user.InstitutionID, &user.Major,
 	)
@@ -232,16 +232,16 @@ func (r *PostgresRepository) FindByEmail(email string) (*User, error) {
 func (r *PostgresRepository) FindByUsername(username string) (*User, error) {
 	user := &User{}
 	query := `
-		SELECT id, email, username, first_name, last_name, password_hash,
-		       google_sub, avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
+		SELECT id, email, username, password_hash, google_sub,
+		       avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
 		       created_at, updated_at, gender, age, institution_id, major
 		FROM users WHERE username = $1
 	`
 
 	var googleSub sql.NullString
 	err := r.db.QueryRow(query, username).Scan(
-		&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
-		&user.PasswordHash, &googleSub, &user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
+		&user.ID, &user.Email, &user.Username, &user.PasswordHash, &googleSub,
+		&user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
 		&user.IsBlacklisted, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
 		&user.Gender, &user.Age, &user.InstitutionID, &user.Major,
 	)
@@ -263,16 +263,16 @@ func (r *PostgresRepository) FindByUsername(username string) (*User, error) {
 func (r *PostgresRepository) FindByGoogleSub(sub string) (*User, error) {
 	user := &User{}
 	query := `
-		SELECT id, email, username, first_name, last_name, password_hash,
-		       google_sub, avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
+		SELECT id, email, username, password_hash, google_sub,
+		       avatar, bio, is_active, is_verified, is_blacklisted, last_login_at,
 		       created_at, updated_at, gender, age, institution_id, major
 		FROM users WHERE google_sub = $1
 	`
 
 	var googleSub sql.NullString
 	err := r.db.QueryRow(query, sub).Scan(
-		&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
-		&user.PasswordHash, &googleSub, &user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
+		&user.ID, &user.Email, &user.Username, &user.PasswordHash, &googleSub,
+		&user.Avatar, &user.Bio, &user.IsActive, &user.IsVerified,
 		&user.IsBlacklisted, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
 		&user.Gender, &user.Age, &user.InstitutionID, &user.Major,
 	)
