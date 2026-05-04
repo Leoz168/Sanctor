@@ -114,6 +114,7 @@ const expandedPanelSize = { width: 760, height: 720 };
 const minPanelSize = { width: 320, height: 420 };
 const maxPanelSize = { width: 900, height: 760 };
 const panelMargin = 24;
+const dragSensitivity = 1;
 
 type Point = {
   x: number;
@@ -184,10 +185,12 @@ export function FloatingMessageButton() {
   const toggleExpanded = () => {
     const current = liveLayoutRef.current;
     const targetSize = isExpanded ? defaultPanelSize : expandedPanelSize;
+    const target = normalizeSize(targetSize);
     const nextLayout = normalizeLayout({
-      ...current,
-      width: targetSize.width,
-      height: targetSize.height,
+      x: current.x + current.width - target.width,
+      y: current.y + current.height - target.height,
+      width: target.width,
+      height: target.height,
     });
 
     applyLayout(nextLayout);
@@ -199,19 +202,41 @@ export function FloatingMessageButton() {
 
     const startPointer = { x: event.clientX, y: event.clientY };
     const startLayout = liveLayoutRef.current;
+    let nextLayout = startLayout;
+
+    if (panelRef.current) {
+      panelRef.current.style.willChange = "transform";
+    }
 
     const movePanel = (moveEvent: PointerEvent) => {
-      applyLayout(
-        normalizeLayout({
-          ...startLayout,
-          x: startLayout.x + moveEvent.clientX - startPointer.x,
-          y: startLayout.y + moveEvent.clientY - startPointer.y,
-        }),
-      );
+      const dx = (moveEvent.clientX - startPointer.x) * dragSensitivity;
+      const dy = (moveEvent.clientY - startPointer.y) * dragSensitivity;
+
+      nextLayout = normalizeLayout({
+        ...startLayout,
+        x: startLayout.x + dx,
+        y: startLayout.y + dy,
+      });
+
+      liveLayoutRef.current = nextLayout;
+
+      if (!panelRef.current) {
+        return;
+      }
+
+      panelRef.current.style.transform = `translate3d(${
+        nextLayout.x - startLayout.x
+      }px, ${nextLayout.y - startLayout.y}px, 0)`;
     };
 
     const stopDrag = () => {
-      commitLayout();
+      if (panelRef.current) {
+        panelRef.current.style.transform = "";
+        panelRef.current.style.willChange = "";
+      }
+
+      applyLayout(nextLayout);
+      commitLayout(nextLayout);
       window.removeEventListener("pointermove", movePanel);
       window.removeEventListener("pointerup", stopDrag);
       window.removeEventListener("pointercancel", stopDrag);
@@ -267,7 +292,7 @@ export function FloatingMessageButton() {
       {isOpen && (
         <div
           ref={panelRef}
-          className="fixed z-50 flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-4 fade-in duration-200"
+          className="fixed z-50 flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
           style={{
             left: layout.x,
             top: layout.y,
@@ -279,7 +304,7 @@ export function FloatingMessageButton() {
             <button
               type="button"
               onPointerDown={startDrag}
-              className="flex min-w-0 flex-1 cursor-move touch-none items-center gap-2 text-left"
+              className="flex min-w-0 flex-1 cursor-move touch-none select-none items-center gap-2 text-left"
               aria-label="Move messages"
             >
               <Grip className="h-4 w-4 shrink-0 text-muted-foreground" />

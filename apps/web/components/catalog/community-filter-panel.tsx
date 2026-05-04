@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { MessageSquare, Search } from "lucide-react";
 import { AutoCollapsingFilterShell } from "@/components/catalog/auto-collapsing-filter-shell";
 import { SelectControl } from "@/components/forms/select-control";
 
@@ -17,9 +17,27 @@ const communityFilters = [
   },
 ];
 
-export function CommunityFilterPanel() {
+interface CommunityFilterPanelProps {
+  onCreateCommunity: () => void;
+}
+
+export function CommunityFilterPanel({
+  onCreateCommunity,
+}: CommunityFilterPanelProps) {
   return (
-    <AutoCollapsingFilterShell expandedHeightClassName="h-[248px] sm:h-[150px]">
+    <AutoCollapsingFilterShell
+      expandedHeightClassName="h-[318px] sm:h-[220px] lg:h-[150px]"
+      action={
+        <button
+          type="button"
+          onClick={onCreateCommunity}
+          className="inline-flex items-center gap-2 rounded-full bg-brand-orange px-5 py-3 text-sm font-bold text-white shadow-xl shadow-brand-orange/25 transition-all hover:bg-orange-600 active:scale-95"
+        >
+          <MessageSquare className="h-5 w-5" />
+          <span>Create community</span>
+        </button>
+      }
+    >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />

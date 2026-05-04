@@ -6,11 +6,13 @@ import { useScrollCollapse } from "@/hooks/use-scroll-collapse";
 interface AutoCollapsingFilterShellProps {
   children: ReactNode;
   expandedHeightClassName: string;
+  action?: ReactNode;
 }
 
 export function AutoCollapsingFilterShell({
   children,
   expandedHeightClassName,
+  action,
 }: AutoCollapsingFilterShellProps) {
   const isExpanded = useScrollCollapse();
 
@@ -23,16 +25,17 @@ export function AutoCollapsingFilterShell({
       />
 
       <div
-        className={`fixed left-0 right-0 top-20 z-30 border-t border-gray-100 bg-white/95 shadow-xl shadow-gray-900/5 backdrop-blur-md transition-all duration-300 ease-out ${
+        className={`fixed left-0 right-0 top-20 z-30 border-b border-gray-100 bg-white/95 shadow-md shadow-gray-900/5 backdrop-blur-md transition-all duration-300 ease-out ${
           isExpanded
             ? "translate-y-0 opacity-100"
             : "pointer-events-none -translate-y-full opacity-0"
         }`}
       >
-        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
-          <div className="space-y-3 rounded-b-[1.5rem] border border-t-0 border-gray-100 bg-white/95 p-4 shadow-sm">
+        <div className="mx-auto flex max-w-[92rem] flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-start lg:px-8">
+          <div className="min-w-0 flex-1 space-y-3">
             {children}
           </div>
+          {action && <div className="shrink-0 self-start lg:pt-0.5">{action}</div>}
         </div>
       </div>
     </>
