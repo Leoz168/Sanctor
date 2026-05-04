@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { MessageCircle, X } from "lucide-react";
+import { useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
+import { Grip, Maximize2, MessageCircle, Minimize2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContactsList } from "@/components/messages/contacts-list";
 import { ChatWindow } from "@/components/messages/chat-window";
@@ -108,47 +109,207 @@ const mockMessages: Record<string, Message[]> = {
   ],
 };
 
+const defaultPanelSize = { width: 380, height: 600 };
+const expandedPanelSize = { width: 760, height: 720 };
+const minPanelSize = { width: 320, height: 420 };
+const maxPanelSize = { width: 900, height: 760 };
+const panelMargin = 24;
+
+type Point = {
+  x: number;
+  y: number;
+};
+
+type PanelSize = {
+  width: number;
+  height: number;
+};
+
+type PanelLayout = Point & PanelSize;
+type ResizeDirection = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
+
 export function FloatingMessageButton() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [contacts] = useState<Contact[]>(mockContacts);
+  const [layout, setLayout] = useState<PanelLayout>(() =>
+    getDefaultLayout(defaultPanelSize),
+  );
 
-  const handleSelectContact = (contact: Contact) => {
-    setSelectedContact(contact);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const liveLayoutRef = useRef<PanelLayout>(layout);
+
+  const applyLayout = (nextLayout: PanelLayout) => {
+    liveLayoutRef.current = nextLayout;
+
+    if (!panelRef.current) {
+      return;
+    }
+
+    panelRef.current.style.left = `${nextLayout.x}px`;
+    panelRef.current.style.top = `${nextLayout.y}px`;
+    panelRef.current.style.width = `${nextLayout.width}px`;
+    panelRef.current.style.height = `${nextLayout.height}px`;
   };
 
-  const handleBack = () => {
-    setSelectedContact(null);
+  const commitLayout = (nextLayout = liveLayoutRef.current) => {
+    liveLayoutRef.current = nextLayout;
+    setLayout(nextLayout);
+    setIsExpanded(
+      nextLayout.width > defaultPanelSize.width ||
+        nextLayout.height > defaultPanelSize.height,
+    );
+  };
+
+  const openMessages = () => {
+    const nextLayout = getDefaultLayout(defaultPanelSize);
+
+    liveLayoutRef.current = nextLayout;
+    setLayout(nextLayout);
+    setIsExpanded(false);
+    setIsOpen(true);
   };
 
   const handleClose = () => {
+    const nextLayout = getDefaultLayout(defaultPanelSize);
+
     setIsOpen(false);
+    setIsExpanded(false);
     setSelectedContact(null);
+    setLayout(nextLayout);
+    liveLayoutRef.current = nextLayout;
+  };
+
+  const toggleExpanded = () => {
+    const current = liveLayoutRef.current;
+    const targetSize = isExpanded ? defaultPanelSize : expandedPanelSize;
+    const nextLayout = normalizeLayout({
+      ...current,
+      width: targetSize.width,
+      height: targetSize.height,
+    });
+
+    applyLayout(nextLayout);
+    commitLayout(nextLayout);
+  };
+
+  const startDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+
+    const startPointer = { x: event.clientX, y: event.clientY };
+    const startLayout = liveLayoutRef.current;
+
+    const movePanel = (moveEvent: PointerEvent) => {
+      applyLayout(
+        normalizeLayout({
+          ...startLayout,
+          x: startLayout.x + moveEvent.clientX - startPointer.x,
+          y: startLayout.y + moveEvent.clientY - startPointer.y,
+        }),
+      );
+    };
+
+    const stopDrag = () => {
+      commitLayout();
+      window.removeEventListener("pointermove", movePanel);
+      window.removeEventListener("pointerup", stopDrag);
+      window.removeEventListener("pointercancel", stopDrag);
+    };
+
+    window.addEventListener("pointermove", movePanel);
+    window.addEventListener("pointerup", stopDrag);
+    window.addEventListener("pointercancel", stopDrag);
+  };
+
+  const startResize = (
+    direction: ResizeDirection,
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const startPointer = { x: event.clientX, y: event.clientY };
+    const startLayout = liveLayoutRef.current;
+
+    const resizePanel = (moveEvent: PointerEvent) => {
+      const dx = moveEvent.clientX - startPointer.x;
+      const dy = moveEvent.clientY - startPointer.y;
+
+      applyLayout(resizeLayout(startLayout, direction, dx, dy));
+    };
+
+    const stopResize = () => {
+      commitLayout();
+      window.removeEventListener("pointermove", resizePanel);
+      window.removeEventListener("pointerup", stopResize);
+      window.removeEventListener("pointercancel", stopResize);
+    };
+
+    window.addEventListener("pointermove", resizePanel);
+    window.addEventListener("pointerup", stopResize);
+    window.addEventListener("pointercancel", stopResize);
   };
 
   return (
     <>
-      <Button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary shadow-lg transition-transform hover:scale-105 hover:bg-primary/90"
-        size="icon"
-        aria-label="Open messages"
-      >
-        <MessageCircle className="h-6 w-6" />
-      </Button>
+      {!isOpen && (
+        <Button
+          onClick={openMessages}
+          className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-brand-orange text-white shadow-lg shadow-brand-orange/30 transition-transform hover:scale-105 hover:bg-orange-600"
+          size="icon"
+          aria-label="Open messages"
+        >
+          <MessageCircle className="h-6 w-6" />
+        </Button>
+      )}
 
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 flex h-[600px] w-[calc(100vw-2rem)] max-w-[380px] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-4 fade-in duration-200">
+        <div
+          ref={panelRef}
+          className="fixed z-50 flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-4 fade-in duration-200"
+          style={{
+            left: layout.x,
+            top: layout.y,
+            width: layout.width,
+            height: layout.height,
+          }}
+        >
           <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3">
-            <h2 className="font-semibold text-foreground">Messages</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClose}
-              className="h-8 w-8 rounded-full"
+            <button
+              type="button"
+              onPointerDown={startDrag}
+              className="flex min-w-0 flex-1 cursor-move touch-none items-center gap-2 text-left"
+              aria-label="Move messages"
             >
-              <X className="h-4 w-4" />
-            </Button>
+              <Grip className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <h2 className="font-semibold text-foreground">Messages</h2>
+            </button>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleExpanded}
+                className="h-8 w-8 rounded-full"
+                aria-label={isExpanded ? "Shrink messages" : "Expand messages"}
+              >
+                {isExpanded ? (
+                  <Minimize2 className="h-4 w-4" />
+                ) : (
+                  <Maximize2 className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleClose}
+                className="h-8 w-8 rounded-full"
+                aria-label="Close messages"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-hidden">
@@ -156,17 +317,150 @@ export function FloatingMessageButton() {
               <ChatWindow
                 contact={selectedContact}
                 messages={mockMessages[selectedContact.id] || []}
-                onBack={handleBack}
+                onBack={() => setSelectedContact(null)}
               />
             ) : (
               <ContactsList
                 contacts={contacts}
-                onSelectContact={handleSelectContact}
+                onSelectContact={setSelectedContact}
               />
             )}
           </div>
+
+          <ResizeHandle direction="n" onResizeStart={startResize} />
+          <ResizeHandle direction="s" onResizeStart={startResize} />
+          <ResizeHandle direction="e" onResizeStart={startResize} />
+          <ResizeHandle direction="w" onResizeStart={startResize} />
+          <ResizeHandle direction="ne" onResizeStart={startResize} />
+          <ResizeHandle direction="nw" onResizeStart={startResize} />
+          <ResizeHandle direction="se" onResizeStart={startResize} />
+          <ResizeHandle direction="sw" onResizeStart={startResize} />
         </div>
       )}
     </>
   );
+}
+
+interface ResizeHandleProps {
+  direction: ResizeDirection;
+  onResizeStart: (
+    direction: ResizeDirection,
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => void;
+}
+
+function ResizeHandle({ direction, onResizeStart }: ResizeHandleProps) {
+  const className = getResizeHandleClassName(direction);
+
+  return (
+    <button
+      type="button"
+      className={className}
+      onPointerDown={(event) => onResizeStart(direction, event)}
+      aria-label={`Resize messages ${direction}`}
+    />
+  );
+}
+
+function getDefaultLayout(size: PanelSize): PanelLayout {
+  if (typeof window === "undefined") {
+    return { x: panelMargin, y: panelMargin, ...size };
+  }
+
+  const normalizedSize = normalizeSize(size);
+
+  return normalizeLayout({
+    x: window.innerWidth - normalizedSize.width - panelMargin,
+    y: window.innerHeight - normalizedSize.height - panelMargin,
+    ...normalizedSize,
+  });
+}
+
+function normalizeSize(size: PanelSize): PanelSize {
+  if (typeof window === "undefined") {
+    return size;
+  }
+
+  return {
+    width: Math.min(
+      Math.max(minPanelSize.width, size.width),
+      Math.min(maxPanelSize.width, window.innerWidth - panelMargin * 2),
+    ),
+    height: Math.min(
+      Math.max(minPanelSize.height, size.height),
+      Math.min(maxPanelSize.height, window.innerHeight - panelMargin * 2),
+    ),
+  };
+}
+
+function normalizeLayout(layout: PanelLayout): PanelLayout {
+  const size = normalizeSize(layout);
+  const maxX = Math.max(panelMargin, window.innerWidth - size.width - panelMargin);
+  const maxY = Math.max(panelMargin, window.innerHeight - size.height - panelMargin);
+
+  return {
+    x: Math.min(Math.max(panelMargin, layout.x), maxX),
+    y: Math.min(Math.max(panelMargin, layout.y), maxY),
+    ...size,
+  };
+}
+
+function resizeLayout(
+  startLayout: PanelLayout,
+  direction: ResizeDirection,
+  dx: number,
+  dy: number,
+): PanelLayout {
+  let nextLayout = { ...startLayout };
+
+  if (direction.includes("e")) {
+    nextLayout.width = startLayout.width + dx;
+  }
+
+  if (direction.includes("s")) {
+    nextLayout.height = startLayout.height + dy;
+  }
+
+  if (direction.includes("w")) {
+    nextLayout.width = startLayout.width - dx;
+    nextLayout.x = startLayout.x + dx;
+  }
+
+  if (direction.includes("n")) {
+    nextLayout.height = startLayout.height - dy;
+    nextLayout.y = startLayout.y + dy;
+  }
+
+  const normalizedSize = normalizeSize(nextLayout);
+
+  if (direction.includes("w")) {
+    nextLayout.x = startLayout.x + startLayout.width - normalizedSize.width;
+  }
+
+  if (direction.includes("n")) {
+    nextLayout.y = startLayout.y + startLayout.height - normalizedSize.height;
+  }
+
+  return normalizeLayout({
+    ...nextLayout,
+    ...normalizedSize,
+  });
+}
+
+function getResizeHandleClassName(direction: ResizeDirection) {
+  const base =
+    "absolute z-10 touch-none rounded-full bg-transparent transition-colors hover:bg-brand-orange/20";
+
+  const classes: Record<ResizeDirection, string> = {
+    n: "left-5 right-5 top-0 h-2 cursor-n-resize",
+    s: "bottom-0 left-5 right-5 h-2 cursor-s-resize",
+    e: "bottom-5 right-0 top-5 w-2 cursor-e-resize",
+    w: "bottom-5 left-0 top-5 w-2 cursor-w-resize",
+    ne: "right-0 top-0 h-5 w-5 cursor-ne-resize",
+    nw: "left-0 top-0 h-5 w-5 cursor-nw-resize",
+    se: "bottom-0 right-0 h-6 w-6 cursor-se-resize",
+    sw: "bottom-0 left-0 h-5 w-5 cursor-sw-resize",
+  };
+
+  return `${base} ${classes[direction]}`;
 }
