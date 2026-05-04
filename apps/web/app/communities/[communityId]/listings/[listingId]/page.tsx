@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Bath, Bed, CalendarDays, Home } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { ListingAmenitiesSection } from "@/components/listing/listing-amenities-section";
+import { ListingCommentsSection } from "@/components/listing/listing-comments-section";
 import { ListingInfoCard } from "@/components/listing/listing-info-card";
 import { ListingMediaSection } from "@/components/listing/listing-media-section";
 
@@ -73,6 +74,10 @@ export default function CommunityListingPage() {
 
         <div className="mt-8">
           <ListingAmenitiesSection amenities={listing.amenities} />
+        </div>
+
+        <div className="mt-6">
+          <ListingCommentsSection />
         </div>
       </div>
     </AppShell>
