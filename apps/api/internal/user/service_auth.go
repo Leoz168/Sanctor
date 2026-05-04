@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -51,4 +52,44 @@ func (s *Service) FindByEmail(email string) (*User, error) {
 // FindByUsername retrieves a user by username
 func (s *Service) FindByUsername(username string) (*User, error) {
 	return s.repo.FindByUsername(username)
+}
+
+// FindByGoogleSub retrieves a user by Google subject identifier.
+func (s *Service) FindByGoogleSub(sub string) (*User, error) {
+	return s.repo.FindByGoogleSub(sub)
+}
+
+// ExistsByUsername checks if a username already exists.
+func (s *Service) ExistsByUsername(username string) bool {
+	return s.repo.ExistsByUsername(username)
+}
+
+// LinkGoogleSub attaches a Google subject to an existing user.
+func (s *Service) LinkGoogleSub(userID uuid.UUID, sub string, emailVerified bool, picture string, firstName string, lastName string) (*User, error) {
+	user, err := s.repo.FindByID(userID)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+	if user.GoogleSub != nil && *user.GoogleSub != sub {
+		return nil, errors.New("google account already linked")
+	}
+	user.GoogleSub = &sub
+	if emailVerified {
+		user.IsVerified = true
+	}
+	if user.Avatar == "" && picture != "" {
+		user.Avatar = picture
+	}
+	if user.FirstName == "" && firstName != "" {
+		user.FirstName = firstName
+	}
+	if user.LastName == "" && lastName != "" {
+		user.LastName = lastName
+	}
+	user.UpdatedAt = time.Now()
+
+	if err := s.repo.Update(user); err != nil {
+		return nil, err
+	}
+	return user, nil
 }

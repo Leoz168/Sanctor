@@ -62,12 +62,17 @@ docker run -p 8080:8080 sanctor-backend
 
 ```bash
 docker compose -f ../../docker-compose.dev.yml up --build backend
+docker compose -f ../../docker-compose.dev.yml up --build backend-tests
 ```
 
 ### Testing
 
 ```bash
 go test ./...
+```
+
+```bash
+docker compose -f ../../docker-compose.dev.yml up --build backend-tests
 ```
 
 ## API Endpoints
@@ -83,10 +88,11 @@ go test ./...
 - `PUT /api/users/update?id={id}` - Update user
 - `DELETE /api/users/delete?id={id}` - Delete user
 
-### Auth (TODO)
+### Auth
 - `POST /api/auth/login` - User login
 - `POST /api/auth/register` - User registration
-- `POST /api/auth/refresh` - Refresh token
+- `POST /api/auth/google` - Google OAuth login/registration
+- `POST /api/auth/google/link` - Link Google account (requires auth)
 
 ### Posts (TODO)
 - `GET /api/posts` - List all posts
@@ -103,6 +109,7 @@ Environment variables:
 - `DB_PASSWORD` - Database password
 - `DB_NAME` - Database name
 - `JWT_SECRET` - JWT signing secret
+- `GOOGLE_CLIENT_ID` - Google OAuth client ID (ID token audience)
 
 ## Adding a New Module
 

@@ -115,3 +115,13 @@ func (r *InMemoryRepository) FindByUsername(username string) (*User, error) {
 	}
 	return nil, errors.New("user not found")
 }
+
+// FindByGoogleSub retrieves a user by Google subject.
+func (r *InMemoryRepository) FindByGoogleSub(sub string) (*User, error) {
+	for _, user := range r.users {
+		if user.GoogleSub != nil && *user.GoogleSub == sub {
+			return user, nil
+		}
+	}
+	return nil, errors.New("user not found")
+}

@@ -72,6 +72,7 @@ For development with volume mounting and hot reloading:
 ```bash
 docker-compose -f docker-compose.dev.yml up
 docker compose -f docker-compose.dev.yml up --build backend
+docker compose -f docker-compose.dev.yml up --build backend-tests
 ```
 apps/
 │   ├── backend/              # Go REST API
@@ -155,12 +156,19 @@ docker-compose up --build --force-recreate
 
 - `GET /health` - Health check
 - `GET /api/health` - API health check with JSON response
+### Auth
+- `POST /api/auth/login` - User login
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/google` - Google OAuth login/registration
+- `POST /api/auth/google/link` - Link Google account (requires auth)
 
 ## Environment Variables
 
 ### Backend
 - `PORT` - Server port (default: 8080)
 - `GO_ENV` - Environment mode (development/production)
+- `JWT_SECRET` - JWT signing secret
+- `GOOGLE_CLIENT_ID` - Google OAuth client ID (ID token audience)
 
 ### Frontend
 - `REACT_APP_API_URL` - Backend API URL (default: http://localhost:8080)

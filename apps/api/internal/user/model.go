@@ -15,6 +15,7 @@ type User struct {
 	FirstName     string             `json:"firstName" gorm:"type:varchar(100)"`
 	LastName      string             `json:"lastName" gorm:"type:varchar(100)"`
 	PasswordHash  string             `json:"-" gorm:"type:varchar(255);not null"`
+	GoogleSub     *string            `json:"-" gorm:"type:varchar(255);uniqueIndex"`
 	Avatar        string             `json:"avatar,omitempty" gorm:"type:varchar(500)"`
 	Bio           string             `json:"bio,omitempty" gorm:"type:text"`
 	IsActive      bool               `json:"isActive" gorm:"default:true"`

@@ -23,6 +23,7 @@ func (r *userStub) IsEmailBlacklisted(email string) (bool, error) { return r.bla
 func (r *userStub) ExistsByUsername(username string) bool { return r.existsUsername }
 func (r *userStub) FindByEmail(email string) (*User, error) { return r.created, nil }
 func (r *userStub) FindByUsername(username string) (*User, error) { return r.created, nil }
+func (r *userStub) FindByGoogleSub(sub string) (*User, error) { return r.created, nil }
 
 func TestCreateUserValidationAndDuplicates(t *testing.T){
     svc := NewService(&userStub{})
