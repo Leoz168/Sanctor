@@ -144,6 +144,8 @@ func main() {
 	http.HandleFunc("/api/health", healthHandler)
 	http.HandleFunc("/api/auth/register", authHandler.Register)
 	http.HandleFunc("/api/auth/login", authHandler.Login)
+	http.HandleFunc("/api/auth/google", authHandler.GoogleLogin)
+	http.HandleFunc("/api/auth/google/link", authRequired(authHandler.GoogleLink))
 
 	// User endpoints
 	http.HandleFunc("/api/users", authRequired(user.GetUsers))

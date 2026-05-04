@@ -27,6 +27,11 @@ type RegisterRequest struct {
 	LastName  string `json:"lastName"`
 }
 
+// GoogleAuthRequest represents a Google ID token payload from the client.
+type GoogleAuthRequest struct {
+	IDToken string `json:"idToken"`
+}
+
 // AuthResponse represents authentication response
 type AuthResponse struct {
 	Token        string `json:"token"`

@@ -14,4 +14,5 @@ type Repository interface {
 	ExistsByUsername(username string) bool
 	FindByEmail(email string) (*User, error)
 	FindByUsername(username string) (*User, error)
+	FindByGoogleSub(sub string) (*User, error)
 }

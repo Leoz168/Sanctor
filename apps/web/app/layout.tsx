@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { FloatingMessageButton } from "@/components/messages/floating-message-button";
 import "./globals.css";
 
@@ -15,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
         {children}
         <FloatingMessageButton />
       </body>
