@@ -39,6 +39,7 @@ export function ProfileFormCard() {
         />
         <ProfileField label={profileFields[2].label} value={profileFields[2].value} />
         <ProfileField label={profileFields[3].label} value={profileFields[3].value} />
+        <ProfileContactCard />
       </div>
 
       <div className="mt-4">
@@ -46,14 +47,10 @@ export function ProfileFormCard() {
           <FieldLabel>Bio</FieldLabel>
           <textarea
             defaultValue="Looking for clean, transit-friendly housing near campus. I like quiet study spaces, shared dinners, and communities that keep things organized."
-            rows={3}
+            rows={5}
             className="w-full resize-none rounded-2xl border border-gray-100 bg-gray-50 px-5 py-4 text-sm font-semibold leading-6 text-gray-700 shadow-inner shadow-gray-900/5 outline-none transition-all focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-brand-orange/10"
           />
         </label>
-      </div>
-
-      <div className="mt-4">
-        <ProfileContactCard />
       </div>
 
       <div className="mt-6 flex justify-end">
