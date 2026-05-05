@@ -15,7 +15,7 @@ const profileFields = [
 
 export function ProfileFormCard() {
   return (
-    <section className="rounded-[2rem] border border-orange-100/70 bg-white px-6 py-6 shadow-2xl shadow-orange-900/8 sm:px-8 lg:px-12 lg:py-7">
+    <section className="rounded-[2rem] border border-orange-100 bg-white/95 px-6 py-6 shadow-2xl shadow-orange-900/10 sm:px-8 lg:px-12 lg:py-7">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
         <ProfileAvatar />
 
@@ -23,7 +23,7 @@ export function ProfileFormCard() {
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">
             Alex Rivera
           </h1>
-          <p className="mt-1.5 text-base font-semibold italic text-gray-400">
+          <p className="mt-1.5 text-base font-semibold italic text-gray-500">
             Student at University of Toronto
           </p>
         </div>
@@ -36,9 +36,12 @@ export function ProfileFormCard() {
           label={profileFields[1].label}
           value={profileFields[1].value}
           type={profileFields[1].type}
+          min={18}
+          max={100}
         />
         <ProfileField label={profileFields[2].label} value={profileFields[2].value} />
         <ProfileField label={profileFields[3].label} value={profileFields[3].value} />
+        <ProfileContactCard />
       </div>
 
       <div className="mt-4">
@@ -46,14 +49,10 @@ export function ProfileFormCard() {
           <FieldLabel>Bio</FieldLabel>
           <textarea
             defaultValue="Looking for clean, transit-friendly housing near campus. I like quiet study spaces, shared dinners, and communities that keep things organized."
-            rows={3}
+            rows={5}
             className="w-full resize-none rounded-2xl border border-gray-100 bg-gray-50 px-5 py-4 text-sm font-semibold leading-6 text-gray-700 shadow-inner shadow-gray-900/5 outline-none transition-all focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-brand-orange/10"
           />
         </label>
-      </div>
-
-      <div className="mt-4">
-        <ProfileContactCard />
       </div>
 
       <div className="mt-6 flex justify-end">

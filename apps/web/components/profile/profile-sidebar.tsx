@@ -17,7 +17,7 @@ const profileNavItems = [
 
 export function ProfileSidebar() {
   return (
-    <aside className="rounded-[2rem] border border-orange-100/70 bg-white/90 p-5 shadow-xl shadow-orange-900/5 backdrop-blur-sm lg:sticky lg:top-24">
+    <aside className="rounded-[2rem] border border-orange-100 bg-white/95 p-5 shadow-xl shadow-orange-900/8 backdrop-blur-sm lg:sticky lg:top-24">
       <h2 className="px-2 text-3xl font-bold tracking-tight text-gray-900">
         Settings
       </h2>
@@ -32,8 +32,8 @@ export function ProfileSidebar() {
               type="button"
               className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.14em] transition-all ${
                 item.isActive
-                  ? "bg-orange-50 text-brand-orange shadow-sm"
-                  : "text-gray-400 hover:bg-brand-cream hover:text-gray-700"
+                  ? "bg-brand-cream text-brand-orange shadow-sm shadow-orange-900/5"
+                  : "text-gray-500 hover:bg-brand-cream hover:text-gray-700"
               }`}
             >
               <Icon className="h-4 w-4 shrink-0" />

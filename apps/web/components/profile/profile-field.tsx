@@ -5,15 +5,25 @@ interface ProfileFieldProps {
   label: string;
   value: string;
   type?: string;
+  min?: number;
+  max?: number;
 }
 
-export function ProfileField({ label, value, type = "text" }: ProfileFieldProps) {
+export function ProfileField({
+  label,
+  value,
+  type = "text",
+  min,
+  max,
+}: ProfileFieldProps) {
   return (
     <label className="block">
       <FieldLabel>{label}</FieldLabel>
       <input
         type={type}
         defaultValue={value}
+        min={min}
+        max={max}
         className={fieldClassName}
       />
     </label>
@@ -34,7 +44,7 @@ export function GenderSelect() {
 
 export function FieldLabel({ children }: { children: string }) {
   return (
-    <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.22em] text-gray-400">
+    <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.22em] text-gray-500">
       {children}
     </span>
   );
