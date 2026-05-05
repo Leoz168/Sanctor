@@ -436,7 +436,7 @@ function resizeLayout(
   dx: number,
   dy: number,
 ): PanelLayout {
-  let nextLayout = { ...startLayout };
+  const nextLayout = { ...startLayout };
 
   if (direction.includes("e")) {
     nextLayout.width = startLayout.width + dx;

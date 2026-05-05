@@ -1,6 +1,11 @@
+"use client";
+
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Lock, Mail } from "lucide-react";
 import { AuthCard } from "@/components/auth/auth-card";
 import { AuthPageShell } from "@/components/auth/auth-page-shell";
+import { loginWithPassword, persistAuthToken } from "@/lib/auth-client";
 
 const fields = [
   {
@@ -20,6 +25,39 @@ const fields = [
 ];
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [values, setValues] = useState({
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+
+    if (!values.email.trim() || !values.password) {
+      setError("Enter both your email and password.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await loginWithPassword({
+        email: values.email.trim(),
+        password: values.password,
+      });
+
+      persistAuthToken(response.token);
+      router.push("/communities");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <AuthPageShell>
       <AuthCard
@@ -31,6 +69,11 @@ export default function LoginPage() {
         footerText="New to Rentling?"
         footerLinkLabel="Create an account"
         footerHref="/register"
+        values={values}
+        onFieldChange={(name, value) => setValues((current) => ({ ...current, [name]: value }))}
+        onSubmit={handleSubmit}
+        error={error}
+        isSubmitting={isSubmitting}
       >
         <div className="flex items-center justify-between gap-4 text-sm font-semibold sm:text-base">
           <label className="flex items-center gap-3 text-gray-500">
