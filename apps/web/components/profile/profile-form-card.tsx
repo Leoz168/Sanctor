@@ -59,7 +59,7 @@ export function ProfileFormCard() {
       <div className="mt-6 flex justify-end">
         <button
           type="button"
-          className="rounded-2xl bg-gray-900 px-7 py-4 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-xl shadow-gray-900/20 transition-all hover:-translate-y-0.5 hover:bg-brand-orange hover:shadow-brand-orange/25 active:translate-y-0"
+          className="rounded-2xl bg-brand-orange px-7 py-4 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-xl shadow-brand-orange/25 transition-all hover:-translate-y-0.5 hover:bg-orange-600 active:translate-y-0"
         >
           Save changes
         </button>
