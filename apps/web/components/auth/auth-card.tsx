@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ReactNode } from "react";
+import { FormEvent, ReactNode } from "react";
 import { LucideIcon } from "lucide-react";
 import { IconInput } from "@/components/forms/icon-input";
 import { GoogleAuthButton } from "@/components/auth/google-auth-button";
@@ -21,6 +21,11 @@ interface AuthCardProps {
   footerText: string;
   footerLinkLabel: string;
   footerHref: string;
+  values: Record<string, string>;
+  onFieldChange: (name: string, value: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  error?: string;
+  isSubmitting?: boolean;
   children?: ReactNode;
 }
 
@@ -33,6 +38,11 @@ export function AuthCard({
   footerText,
   footerLinkLabel,
   footerHref,
+  values,
+  onFieldChange,
+  onSubmit,
+  error,
+  isSubmitting = false,
   children,
 }: AuthCardProps) {
   return (
@@ -44,20 +54,33 @@ export function AuthCard({
         </p>
       </div>
 
-      <form className="space-y-5">
+      <form className="space-y-5" onSubmit={onSubmit}>
         {fields.map((field) => (
           <label key={field.name} className="block">
             <span className="mb-2 block text-base font-bold text-gray-700 sm:text-lg">
               {field.label}
             </span>
-            <IconInput icon={field.icon} name={field.name} type={field.type} placeholder={field.placeholder} />
+            <IconInput
+              icon={field.icon}
+              name={field.name}
+              type={field.type}
+              placeholder={field.placeholder}
+              value={values[field.name] ?? ""}
+              onChange={(event) => onFieldChange(field.name, event.target.value)}
+            />
           </label>
         ))}
 
         {children}
 
-        <button className="w-full rounded-[1.25rem] bg-brand-orange px-5 py-4 text-lg font-bold text-white shadow-xl shadow-brand-orange/30 transition-all hover:bg-orange-600 active:scale-[0.99]">
-          {submitLabel}
+        {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full rounded-[1.25rem] bg-brand-orange px-5 py-4 text-lg font-bold text-white shadow-xl shadow-brand-orange/30 transition-all hover:bg-orange-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {isSubmitting ? "Please wait..." : submitLabel}
         </button>
 
         {googleLabel && (
@@ -76,4 +99,3 @@ export function AuthCard({
     </div>
   );
 }
-
