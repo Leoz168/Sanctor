@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Bookmark, Building2, Star } from "lucide-react";
+import { Bookmark, Star } from "lucide-react";
+import { ProfileCommunitiesPanel } from "@/components/profile/profile-communities-panel";
 import { ProfileFormCard } from "@/components/profile/profile-form-card";
 import { ProfileListingsPanel } from "@/components/profile/profile-listings-panel";
 import { ProfilePlaceholderPanel } from "@/components/profile/profile-placeholder-panel";
@@ -18,13 +19,7 @@ export function ProfileDashboard() {
       <ProfileSidebar activeTab={activeTab} onTabChange={setActiveTab} />
       {activeTab === "profile" ? <ProfileFormCard /> : null}
       {activeTab === "listings" ? <ProfileListingsPanel /> : null}
-      {activeTab === "communities" ? (
-        <ProfilePlaceholderPanel
-          title="My Communities"
-          description="Communities you own or moderate will appear here once they are connected to your profile."
-          icon={<Building2 className="h-6 w-6" />}
-        />
-      ) : null}
+      {activeTab === "communities" ? <ProfileCommunitiesPanel /> : null}
       {activeTab === "bookmarks" ? (
         <ProfilePlaceholderPanel
           title="Bookmarked Listings"

@@ -6,27 +6,27 @@ import { profilePanelClassName } from "@/components/profile/profile-panel-styles
 export function ProfileListingsPanel() {
   return (
     <section className={`${profilePanelClassName} flex flex-col`}>
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-orange">
-          Housing posts
-        </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
-          My Current Listings
-        </h1>
-      </div>
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-orange">
+            Housing posts
+          </p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
+            My Current Listings
+          </h1>
+        </div>
 
-      <div className="mt-8 min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
-        <ProfileListingManagementCard />
-      </div>
-
-      <div className="mt-6 flex justify-end">
         <Link
           href="/create-post"
-          className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl bg-brand-orange px-7 text-sm font-bold uppercase tracking-[0.14em] text-white shadow-xl shadow-brand-orange/25 transition-all hover:bg-orange-600 active:scale-95"
+          className="inline-flex items-center justify-center gap-3 rounded-2xl border border-brand-orange bg-white px-7 py-4 text-xs font-bold uppercase tracking-[0.16em] text-brand-orange shadow-sm shadow-orange-900/5 transition-all hover:bg-brand-cream active:scale-95"
         >
           <Plus className="h-5 w-5" />
           Add Listing
         </Link>
+      </div>
+
+      <div className="mt-8 min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
+        <ProfileListingManagementCard />
       </div>
     </section>
   );

@@ -10,7 +10,7 @@ const profileNavItems: Array<{
 }> = [
   { id: "profile", label: "Profile", icon: User },
   { id: "listings", label: "My Listings", icon: Home, count: 1 },
-  { id: "communities", label: "My Communities", icon: Building2 },
+  { id: "communities", label: "My Communities", icon: Building2, count: 2 },
   { id: "bookmarks", label: "Bookmark", icon: Bookmark },
   { id: "account", label: "My Account", icon: Star },
 ];
