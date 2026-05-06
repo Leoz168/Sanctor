@@ -1,5 +1,6 @@
 import { ProfileAvatar } from "@/components/profile/profile-avatar";
 import { ProfileContactCard } from "@/components/profile/profile-contact-card";
+import { profilePanelClassName } from "@/components/profile/profile-panel-styles";
 import {
   FieldLabel,
   GenderSelect,
@@ -15,7 +16,7 @@ const profileFields = [
 
 export function ProfileFormCard() {
   return (
-    <section className="rounded-[2rem] border border-orange-100 bg-white/95 px-6 py-6 shadow-2xl shadow-orange-900/10 sm:px-8 lg:px-12 lg:py-7">
+    <section className={profilePanelClassName}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
         <ProfileAvatar />
 
