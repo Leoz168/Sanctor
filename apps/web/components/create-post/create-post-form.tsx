@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { ImagePlus, X } from "lucide-react";
+import { CommunityShareSection } from "@/components/create-post/community-share-section";
 import { Field, inputClassName } from "@/components/create-post/field";
 import { FormSection } from "@/components/create-post/form-section";
 import { SegmentedControl } from "@/components/create-post/segmented-control";
@@ -203,6 +204,8 @@ export function CreatePostForm() {
           </div>
         </Field>
       </div>
+
+      <CommunityShareSection />
 
       <div className="mb-10 flex justify-end">
         <button className="rounded-2xl bg-brand-orange px-10 py-4 text-base font-black uppercase tracking-[0.18em] text-white shadow-xl shadow-brand-orange/25 transition-all hover:bg-orange-600 active:scale-[0.99]">
