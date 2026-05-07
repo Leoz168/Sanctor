@@ -78,10 +78,12 @@ docker compose -f ../../docker-compose.dev.yml up --build backend-tests
 ## API Endpoints
 
 ### Health
+
 - `GET /health` - Health check
 - `GET /api/health` - API health check
 
 ### Users
+
 - `GET /api/users` - List all users
 - `GET /api/users/get?id={id}` - Get user by ID
 - `POST /api/users/create` - Create new user
@@ -89,18 +91,26 @@ docker compose -f ../../docker-compose.dev.yml up --build backend-tests
 - `DELETE /api/users/delete?id={id}` - Delete user
 
 ### Auth
+
 - `POST /api/auth/login` - User login
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/google` - Google OAuth login/registration
 - `POST /api/auth/google/link` - Link Google account (requires auth)
 
 ### Posts (TODO)
+
 - `GET /api/posts` - List all posts
 - `POST /api/posts/create` - Create new post
+- `GET /api/pictures?ownerType=post&ownerId={id}` - List listing pictures
+- `GET /api/pictures?ownerType=community&ownerId={id}` - List community pictures
+- `POST /api/pictures/upload?ownerType=post&ownerId={id}` - Upload a listing picture with multipart field `image`
+- `POST /api/pictures/upload?ownerType=community&ownerId={id}` - Upload a community picture with multipart field `image`
+- `DELETE /api/pictures/delete?id={id}` - Delete a picture and its Supabase Storage object
 
 ## Configuration
 
 Environment variables:
+
 - `PORT` - Server port (default: 8080)
 - `GO_ENV` - Environment (development/production)
 - `DB_HOST` - Database host

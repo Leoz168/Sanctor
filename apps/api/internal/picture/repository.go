@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"sanctor/internal/database"
+	sharedtypes "sanctor/pkg/types"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -13,9 +14,9 @@ import (
 type Repository interface {
 	Create(picture *Picture) error
 	FindByID(id uuid.UUID) (*Picture, error)
-	FindByPostID(postID uuid.UUID) ([]*Picture, error)
+	FindByOwner(ownerType sharedtypes.OwnerType, ownerID uuid.UUID) ([]*Picture, error)
 	Delete(id uuid.UUID) error
-	ExistsPost(postID uuid.UUID) bool
+	ExistsOwner(ownerType sharedtypes.OwnerType, ownerID uuid.UUID) bool
 }
 
 // GormRepository stores picture metadata with GORM.
@@ -43,9 +44,9 @@ func (r *GormRepository) FindByID(id uuid.UUID) (*Picture, error) {
 	return &picture, nil
 }
 
-func (r *GormRepository) FindByPostID(postID uuid.UUID) ([]*Picture, error) {
+func (r *GormRepository) FindByOwner(ownerType sharedtypes.OwnerType, ownerID uuid.UUID) ([]*Picture, error) {
 	var pictures []*Picture
-	err := r.db.Where("post_id = ?", postID).Order("display_order ASC, created_at ASC").Find(&pictures).Error
+	err := r.db.Where("owner_type = ? AND owner_id = ?", ownerType, ownerID).Order("display_order ASC, created_at ASC").Find(&pictures).Error
 	return pictures, err
 }
 
@@ -60,9 +61,18 @@ func (r *GormRepository) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (r *GormRepository) ExistsPost(postID uuid.UUID) bool {
+func (r *GormRepository) ExistsOwner(ownerType sharedtypes.OwnerType, ownerID uuid.UUID) bool {
 	var count int64
-	if err := r.db.Table("posts").Where("id = ?", postID).Count(&count).Error; err != nil {
+	tableName := ""
+	switch ownerType {
+	case sharedtypes.OwnerTypePost:
+		tableName = "posts"
+	case sharedtypes.OwnerTypeCommunity:
+		tableName = "communities"
+	default:
+		return false
+	}
+	if err := r.db.Table(tableName).Where("id = ?", ownerID).Count(&count).Error; err != nil {
 		return false
 	}
 	return count > 0

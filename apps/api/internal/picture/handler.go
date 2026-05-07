@@ -2,6 +2,7 @@ package picture
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 
 	"sanctor/internal/config"
 	"sanctor/internal/database"
+	sharedtypes "sanctor/pkg/types"
 
 	"github.com/google/uuid"
 )
@@ -27,7 +29,7 @@ func InitWithDatabase(db *database.DB, cfg config.SupabaseConfig) {
 	service = NewService(repo, storage)
 }
 
-// GetPictures returns all pictures for a post.
+// GetPictures returns all pictures for a post, community, or other supported owner.
 func GetPictures(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	if r.Method == http.MethodOptions {
@@ -45,13 +47,13 @@ func GetPictures(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	postID, err := uuid.Parse(r.URL.Query().Get("postId"))
+	ownerType, ownerID, err := parseOwner(r)
 	if err != nil {
-		http.Error(w, "invalid post ID format", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	pictures, err := pictureService.GetPicturesByPost(postID)
+	pictures, err := pictureService.GetPicturesByOwner(ownerType, ownerID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -60,7 +62,7 @@ func GetPictures(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pictures)
 }
 
-// UploadPicture uploads an image to Supabase Storage and links it to a post.
+// UploadPicture uploads an image to Supabase Storage and links it to a supported owner.
 func UploadPicture(w http.ResponseWriter, r *http.Request) {
 	enableCORS(&w)
 	if r.Method == http.MethodOptions {
@@ -76,9 +78,9 @@ func UploadPicture(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	postID, err := uuid.Parse(r.URL.Query().Get("postId"))
+	ownerType, ownerID, err := parseOwner(r)
 	if err != nil {
-		http.Error(w, "invalid post ID format", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -120,7 +122,7 @@ func UploadPicture(w http.ResponseWriter, r *http.Request) {
 		order = orderValue
 	}
 
-	picture, err := pictureService.UploadPicture(r.Context(), postID, file, contentType, header.Filename, r.FormValue("caption"), order)
+	picture, err := pictureService.UploadPicture(r.Context(), ownerType, ownerID, file, contentType, header.Filename, r.FormValue("caption"), order)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -167,6 +169,33 @@ func requireService(w http.ResponseWriter) (*Service, bool) {
 		return nil, false
 	}
 	return service, true
+}
+
+func parseOwner(r *http.Request) (sharedtypes.OwnerType, uuid.UUID, error) {
+	q := r.URL.Query()
+	rawOwnerType := q.Get("ownerType")
+	rawOwnerID := q.Get("ownerId")
+
+	if rawOwnerType == "" && rawOwnerID == "" && q.Get("postId") != "" {
+		rawOwnerType = string(sharedtypes.OwnerTypePost)
+		rawOwnerID = q.Get("postId")
+	}
+	if rawOwnerType == "" && rawOwnerID == "" && q.Get("communityId") != "" {
+		rawOwnerType = string(sharedtypes.OwnerTypeCommunity)
+		rawOwnerID = q.Get("communityId")
+	}
+	if rawOwnerType == "" {
+		return "", uuid.Nil, errors.New("ownerType is required")
+	}
+	if rawOwnerID == "" {
+		return "", uuid.Nil, errors.New("ownerId is required")
+	}
+
+	ownerID, err := uuid.Parse(rawOwnerID)
+	if err != nil {
+		return "", uuid.Nil, errors.New("invalid owner ID format")
+	}
+	return sharedtypes.OwnerType(rawOwnerType), ownerID, nil
 }
 
 func enableCORS(w *http.ResponseWriter) {

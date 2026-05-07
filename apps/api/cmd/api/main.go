@@ -205,6 +205,9 @@ func main() {
 	http.HandleFunc("/api/posts/pictures", authRequired(picture.GetPictures))
 	http.HandleFunc("/api/posts/pictures/upload", authRequired(picture.UploadPicture))
 	http.HandleFunc("/api/posts/pictures/delete", authRequired(picture.DeletePicture))
+	http.HandleFunc("/api/pictures", authRequired(picture.GetPictures))
+	http.HandleFunc("/api/pictures/upload", authRequired(picture.UploadPicture))
+	http.HandleFunc("/api/pictures/delete", authRequired(picture.DeletePicture))
 
 	// Comment endpoints
 	http.HandleFunc("/api/comments", authRequired(comment.GetComments))

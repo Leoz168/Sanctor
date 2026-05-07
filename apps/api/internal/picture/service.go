@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	sharedtypes "sanctor/pkg/types"
+
 	"github.com/google/uuid"
 )
 
@@ -32,18 +34,18 @@ func NewService(repo Repository, storage StorageClient) *Service {
 	return &Service{repo: repo, storage: storage}
 }
 
-func (s *Service) UploadPicture(ctx context.Context, postID uuid.UUID, file io.Reader, contentType string, originalFilename string, caption string, order int) (*Picture, error) {
+func (s *Service) UploadPicture(ctx context.Context, ownerType sharedtypes.OwnerType, ownerID uuid.UUID, file io.Reader, contentType string, originalFilename string, caption string, order int) (*Picture, error) {
 	if s.repo == nil {
 		return nil, errors.New("picture repository not initialized")
 	}
 	if s.storage == nil {
 		return nil, errors.New("picture storage not initialized")
 	}
-	if postID == uuid.Nil {
-		return nil, errors.New("postId is required")
+	if err := validateOwner(ownerType, ownerID); err != nil {
+		return nil, err
 	}
-	if !s.repo.ExistsPost(postID) {
-		return nil, errors.New("post not found")
+	if !s.repo.ExistsOwner(ownerType, ownerID) {
+		return nil, fmt.Errorf("%s not found", ownerType)
 	}
 
 	contentType = normalizeContentType(contentType)
@@ -56,7 +58,7 @@ func (s *Service) UploadPicture(ctx context.Context, postID uuid.UUID, file io.R
 	}
 
 	pictureID := uuid.New()
-	storageKey := fmt.Sprintf("posts/%s/%s%s", postID.String(), pictureID.String(), extension)
+	storageKey := fmt.Sprintf("%ss/%s/%s%s", ownerType, ownerID.String(), pictureID.String(), extension)
 
 	url, err := s.storage.Upload(ctx, storageKey, file, contentType)
 	if err != nil {
@@ -66,13 +68,17 @@ func (s *Service) UploadPicture(ctx context.Context, postID uuid.UUID, file io.R
 	now := time.Now()
 	picture := &Picture{
 		ID:         pictureID,
-		PostID:     postID,
+		OwnerType:  ownerType,
+		OwnerID:    ownerID,
 		URL:        url,
 		StorageKey: storageKey,
 		Caption:    strings.TrimSpace(caption),
 		Order:      order,
 		CreatedAt:  now,
 		UpdatedAt:  now,
+	}
+	if ownerType == sharedtypes.OwnerTypePost {
+		picture.PostID = &ownerID
 	}
 	if err := s.repo.Create(picture); err != nil {
 		_ = s.storage.Delete(ctx, storageKey)
@@ -81,14 +87,14 @@ func (s *Service) UploadPicture(ctx context.Context, postID uuid.UUID, file io.R
 	return picture, nil
 }
 
-func (s *Service) GetPicturesByPost(postID uuid.UUID) ([]*Picture, error) {
+func (s *Service) GetPicturesByOwner(ownerType sharedtypes.OwnerType, ownerID uuid.UUID) ([]*Picture, error) {
 	if s.repo == nil {
 		return nil, errors.New("picture repository not initialized")
 	}
-	if postID == uuid.Nil {
-		return nil, errors.New("postId is required")
+	if err := validateOwner(ownerType, ownerID); err != nil {
+		return nil, err
 	}
-	return s.repo.FindByPostID(postID)
+	return s.repo.FindByOwner(ownerType, ownerID)
 }
 
 func (s *Service) DeletePicture(ctx context.Context, id uuid.UUID) error {
@@ -109,6 +115,18 @@ func (s *Service) DeletePicture(ctx context.Context, id uuid.UUID) error {
 		}
 	}
 	return s.repo.Delete(id)
+}
+
+func validateOwner(ownerType sharedtypes.OwnerType, ownerID uuid.UUID) error {
+	if ownerID == uuid.Nil {
+		return errors.New("ownerId is required")
+	}
+	switch ownerType {
+	case sharedtypes.OwnerTypePost, sharedtypes.OwnerTypeCommunity:
+		return nil
+	default:
+		return errors.New("ownerType must be post or community")
+	}
 }
 
 func normalizeContentType(value string) string {
