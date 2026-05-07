@@ -110,6 +110,9 @@ Environment variables:
 - `DB_NAME` - Database name
 - `JWT_SECRET` - JWT signing secret
 - `GOOGLE_CLIENT_ID` - Google OAuth client ID (ID token audience)
+- `SUPABASE_URL` - Supabase project URL, e.g. `https://your-project.supabase.co`
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key used by the backend for Storage writes
+- `SUPABASE_STORAGE_BUCKET` - Supabase Storage bucket for listing images (default: `listing-images`)
 
 ## Adding a New Module
 

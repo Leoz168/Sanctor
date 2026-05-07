@@ -11,6 +11,7 @@ type Config struct {
 	Database DatabaseConfig
 	Redis    RedisConfig
 	Auth     AuthConfig
+	Supabase SupabaseConfig
 }
 
 // ServerConfig holds server-specific configuration
@@ -51,6 +52,13 @@ type AuthConfig struct {
 	RefreshExpiry int // in days
 }
 
+// SupabaseConfig holds Supabase Storage configuration.
+type SupabaseConfig struct {
+	URL            string
+	ServiceRoleKey string
+	StorageBucket string
+}
+
 // Load loads configuration from environment variables
 func Load() *Config {
 	return &Config{
@@ -83,6 +91,11 @@ func Load() *Config {
 			JWTSecret:     getEnv("JWT_SECRET", "your-secret-key"),
 			TokenExpiry:   getEnvInt("TOKEN_EXPIRY", 24),
 			RefreshExpiry: getEnvInt("REFRESH_EXPIRY", 7),
+		},
+		Supabase: SupabaseConfig{
+			URL:            getEnv("SUPABASE_URL", ""),
+			ServiceRoleKey: getEnv("SUPABASE_SERVICE_ROLE_KEY", ""),
+			StorageBucket: getEnv("SUPABASE_STORAGE_BUCKET", "listing-images"),
 		},
 	}
 }
