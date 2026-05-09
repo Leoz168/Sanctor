@@ -165,6 +165,11 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if req.UserID == "" {
+		if userID, ok := r.Context().Value("userId").(string); ok {
+			req.UserID = userID
+		}
+	}
 
 	createdPost, err := h.service.CreatePost(r.Context(), &req)
 	if err != nil {

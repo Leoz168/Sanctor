@@ -24,7 +24,7 @@ type SupabaseStorageClient struct {
 }
 
 func NewSupabaseStorageClient(baseURL, serviceRoleKey, bucket string) (*SupabaseStorageClient, error) {
-	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	baseURL = normalizeSupabaseProjectURL(baseURL)
 	serviceRoleKey = strings.TrimSpace(serviceRoleKey)
 	bucket = strings.Trim(strings.TrimSpace(bucket), "/")
 	if baseURL == "" {
@@ -110,4 +110,11 @@ func escapeObjectPath(path string) string {
 		parts[i] = url.PathEscape(part)
 	}
 	return strings.Join(parts, "/")
+}
+
+func normalizeSupabaseProjectURL(value string) string {
+	baseURL := strings.TrimRight(strings.TrimSpace(value), "/")
+	baseURL = strings.TrimSuffix(baseURL, "/rest/v1")
+	baseURL = strings.TrimSuffix(baseURL, "/storage/v1")
+	return strings.TrimRight(baseURL, "/")
 }

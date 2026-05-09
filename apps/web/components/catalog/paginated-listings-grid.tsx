@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ListingCard } from "@/components/listing-card";
 
 export interface PaginatedListing {
-  id: number;
+  id: string | number;
   title: string;
   price: number;
   location: string;

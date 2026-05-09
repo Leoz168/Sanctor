@@ -79,6 +79,12 @@ func (s *Service) CreatePost(ctx context.Context, req *CreatePostRequest) (*Post
 		UpdatedByUserID: userUUID,
 	}
 
+	if req.Title != nil {
+		post.Title = *req.Title
+	}
+	if req.Content != nil {
+		post.Content = *req.Content
+	}
 	if req.Address != nil {
 		post.Address = *req.Address
 	}
@@ -113,6 +119,10 @@ func (s *Service) CreatePost(ctx context.Context, req *CreatePostRequest) (*Post
 	// Set timestamps
 	post.CreatedAt = time.Now()
 	post.UpdatedAt = time.Now()
+
+	if err := validatePostInput(post); err != nil {
+		return nil, err
+	}
 
 	communityIDs, err := parseUUIDs(uniqueIDs(req.CommunityIDs))
 	if err != nil {

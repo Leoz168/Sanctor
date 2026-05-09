@@ -51,6 +51,8 @@ type PostInstitution struct {
 // CreatePostRequest represents post creation data
 type CreatePostRequest struct {
 	UserID         string              `json:"userId"`
+	Title          *string             `json:"title"`
+	Content        *string             `json:"content"`
 	Address        *string             `json:"address"`
 	IsSublet       *bool               `json:"isSublet"`
 	Price          *int64              `json:"price"`
@@ -60,7 +62,7 @@ type CreatePostRequest struct {
 	Description    *string             `json:"description"`
 	Gender         *sharedtypes.Gender `json:"gender"`
 	PropertyType   *string             `json:"propertyType"`
-	Term           *sharedtypes.Term   `json:"terms"`
+	Term           *sharedtypes.Term   `json:"term"`
 	CommunityIDs   []string            `json:"communityIds,omitempty"`
 	InstitutionIDs []string            `json:"institutionIds,omitempty"`
 }
