@@ -3,6 +3,7 @@ import { ArrowRight, Bath, Bed, Bookmark, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ListingCardProps {
+  id: string | number;
   title: string;
   price: number;
   location: string;
@@ -10,9 +11,13 @@ interface ListingCardProps {
   baths: number;
   image: string;
   badge?: "featured" | "new";
+  isBookmarked?: boolean;
+  isBookmarkPending?: boolean;
+  onToggleBookmark?: (listingId: string | number) => void;
 }
 
 export function ListingCard({
+  id,
   title,
   price,
   location,
@@ -20,6 +25,9 @@ export function ListingCard({
   baths,
   image,
   badge,
+  isBookmarked = false,
+  isBookmarkPending = false,
+  onToggleBookmark,
 }: ListingCardProps) {
   return (
     <div className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden group shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all">
@@ -37,13 +45,21 @@ export function ListingCard({
           </span>
         )}
         <Button
+          type="button"
           size="icon"
           variant="outline"
-          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/85 backdrop-blur-sm border-white/70 text-gray-900 hover:bg-white hover:text-brand-orange"
-          aria-label={`Save listing: ${title}`}
+          onClick={() => onToggleBookmark?.(id)}
+          disabled={isBookmarkPending}
+          className={`absolute top-3 right-3 w-9 h-9 rounded-full border-white/70 backdrop-blur-sm transition-all ${
+            isBookmarked
+              ? "bg-brand-orange text-white shadow-lg shadow-brand-orange/30 hover:bg-orange-600 hover:text-white"
+              : "bg-white/85 text-gray-900 hover:bg-white hover:text-brand-orange"
+          }`}
+          aria-label={isBookmarked ? `Remove saved listing: ${title}` : `Save listing: ${title}`}
+          aria-pressed={isBookmarked}
           title="Save listing"
         >
-          <Bookmark className="w-4 h-4" />
+          <Bookmark className={`w-4 h-4 ${isBookmarked ? "fill-current" : ""}`} />
         </Button>
       </div>
 

@@ -19,11 +19,17 @@ export interface PaginatedListing {
 interface PaginatedListingsGridProps {
   listings: PaginatedListing[];
   pageSize?: number;
+  bookmarkedListingIds?: Set<string>;
+  pendingBookmarkIds?: Set<string>;
+  onToggleBookmark?: (listingId: string | number) => void;
 }
 
 export function PaginatedListingsGrid({
   listings,
   pageSize = 20,
+  bookmarkedListingIds = new Set<string>(),
+  pendingBookmarkIds = new Set<string>(),
+  onToggleBookmark,
 }: PaginatedListingsGridProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(listings.length / pageSize));
@@ -45,7 +51,13 @@ export function PaginatedListingsGrid({
     <section aria-label="Housing listings">
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         {currentListings.map((listing) => (
-          <ListingCard key={listing.id} {...listing} />
+          <ListingCard
+            key={listing.id}
+            {...listing}
+            isBookmarked={bookmarkedListingIds.has(String(listing.id))}
+            isBookmarkPending={pendingBookmarkIds.has(String(listing.id))}
+            onToggleBookmark={onToggleBookmark}
+          />
         ))}
       </div>
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Bookmark, Star } from "lucide-react";
+import { Star } from "lucide-react";
+import { ProfileBookmarksPanel } from "@/components/profile/profile-bookmarks-panel";
 import { ProfileCommunitiesPanel } from "@/components/profile/profile-communities-panel";
 import { ProfileFormCard } from "@/components/profile/profile-form-card";
 import { ProfileListingsPanel } from "@/components/profile/profile-listings-panel";
@@ -20,13 +21,7 @@ export function ProfileDashboard() {
       {activeTab === "profile" ? <ProfileFormCard /> : null}
       {activeTab === "listings" ? <ProfileListingsPanel /> : null}
       {activeTab === "communities" ? <ProfileCommunitiesPanel /> : null}
-      {activeTab === "bookmarks" ? (
-        <ProfilePlaceholderPanel
-          title="Bookmarked Listings"
-          description="Saved listings will live here so you can compare them without searching again."
-          icon={<Bookmark className="h-6 w-6" />}
-        />
-      ) : null}
+      {activeTab === "bookmarks" ? <ProfileBookmarksPanel /> : null}
       {activeTab === "account" ? (
         <ProfilePlaceholderPanel
           title="My Account"

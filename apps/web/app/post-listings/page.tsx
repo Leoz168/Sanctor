@@ -7,6 +7,7 @@ import {
   type PaginatedListing,
 } from "@/components/catalog/paginated-listings-grid";
 import { AppShell } from "@/components/layout/app-shell";
+import { getStoredAuthToken, getUserIdFromToken } from "@/lib/auth-client";
 
 const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 const fallbackImage = "/images/listing-1.jpg";
@@ -25,8 +26,14 @@ type BackendPicture = {
   url?: string;
 };
 
+type BookmarkStatusResponse = {
+  isBookmarked: boolean;
+};
+
 export default function PostListingsPage() {
   const [listings, setListings] = useState<PaginatedListing[]>([]);
+  const [bookmarkedListingIds, setBookmarkedListingIds] = useState<Set<string>>(new Set());
+  const [pendingBookmarkIds, setPendingBookmarkIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -46,7 +53,8 @@ export default function PostListingsPage() {
         }
 
         const posts = dedupePostsByID((await response.json()) as BackendPost[]);
-        const token = localStorage.getItem("authToken") ?? localStorage.getItem("token");
+        const token = getStoredAuthToken();
+        const userId = getUserIdFromToken(token);
         const mappedListings = await Promise.all(
           posts.map(async (post) => ({
             id: post.id,
@@ -62,6 +70,14 @@ export default function PostListingsPage() {
 
         if (isMounted) {
           setListings(mappedListings);
+          if (token && userId) {
+            const bookmarkedIds = await loadBookmarkedListingIds(posts, token, userId);
+            if (isMounted) {
+              setBookmarkedListingIds(bookmarkedIds);
+            }
+          } else {
+            setBookmarkedListingIds(new Set());
+          }
         }
       } catch (loadError) {
         if (isMounted) {
@@ -103,11 +119,88 @@ export default function PostListingsPage() {
         )}
 
         {!isLoading && !error && listings.length > 0 && (
-          <PaginatedListingsGrid listings={listings} pageSize={20} />
+          <PaginatedListingsGrid
+            listings={listings}
+            pageSize={20}
+            bookmarkedListingIds={bookmarkedListingIds}
+            pendingBookmarkIds={pendingBookmarkIds}
+            onToggleBookmark={handleToggleBookmark}
+          />
         )}
       </div>
     </AppShell>
   );
+
+  async function handleToggleBookmark(listingId: string | number) {
+    const postId = String(listingId);
+    const token = getStoredAuthToken();
+    const userId = getUserIdFromToken(token);
+    if (!token || !userId) {
+      if (window.confirm("Log in to save listings. Go to login now?")) {
+        window.location.href = "/login";
+      }
+      return;
+    }
+
+    const isCurrentlyBookmarked = bookmarkedListingIds.has(postId);
+    const confirmed = window.confirm(
+      isCurrentlyBookmarked
+        ? "Remove this listing from your saved listings?"
+        : "Save this listing?",
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setPendingBookmarkIds((current) => new Set(current).add(postId));
+    try {
+      if (isCurrentlyBookmarked) {
+        const response = await fetch(
+          `${apiBase}/api/posts/bookmarks/delete?userId=${userId}&postId=${postId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        if (!response.ok) {
+          throw new Error((await response.text()) || "Could not remove saved listing.");
+        }
+
+        setBookmarkedListingIds((current) => {
+          const next = new Set(current);
+          next.delete(postId);
+          return next;
+        });
+      } else {
+        const response = await fetch(`${apiBase}/api/posts/bookmarks/create`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId, postId }),
+        });
+        if (!response.ok) {
+          const message = await response.text();
+          if (!message.toLowerCase().includes("already bookmarked")) {
+            throw new Error(message || "Could not save listing.");
+          }
+        }
+
+        setBookmarkedListingIds((current) => new Set(current).add(postId));
+      }
+    } catch (bookmarkError) {
+      window.alert(bookmarkError instanceof Error ? bookmarkError.message : "Could not update saved listing.");
+    } finally {
+      setPendingBookmarkIds((current) => {
+        const next = new Set(current);
+        next.delete(postId);
+        return next;
+      });
+    }
+  }
 }
 
 async function loadPrimaryImage(postID: string, token: string | null) {
@@ -155,4 +248,31 @@ function dedupePostsByID(posts: BackendPost[]) {
     seen.add(post.id);
     return true;
   });
+}
+
+async function loadBookmarkedListingIds(posts: BackendPost[], token: string, userId: string) {
+  const statuses = await Promise.all(
+    posts.map(async (post) => {
+      try {
+        const response = await fetch(
+          `${apiBase}/api/posts/bookmarks/check?userId=${userId}&postId=${post.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        if (!response.ok) {
+          return null;
+        }
+
+        const status = (await response.json()) as BookmarkStatusResponse;
+        return status.isBookmarked ? post.id : null;
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  return new Set(statuses.filter((id): id is string => Boolean(id)));
 }
