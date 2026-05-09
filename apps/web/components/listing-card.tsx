@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ArrowRight, Bath, Bed, MapPin, Plus } from "lucide-react";
+import { ArrowRight, Bath, Bed, Bookmark, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ListingCardProps {
@@ -40,9 +40,10 @@ export function ListingCard({
           size="icon"
           variant="outline"
           className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/85 backdrop-blur-sm border-white/70 text-gray-900 hover:bg-white hover:text-brand-orange"
-          aria-label={`Save ${title}`}
+          aria-label={`Save listing: ${title}`}
+          title="Save listing"
         >
-          <Plus className="w-4 h-4" />
+          <Bookmark className="w-4 h-4" />
         </Button>
       </div>
 
