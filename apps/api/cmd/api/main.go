@@ -87,6 +87,7 @@ func main() {
 			bookmark.InitWithDatabase(db)
 			blocking.InitWithDatabase(db)
 			comment.InitWithDatabase(db)
+			picture.InitWithDatabase(db, appConfig.Supabase)
 			log.Println("✅ Database initialized successfully")
 		}
 	} else {
@@ -201,6 +202,12 @@ func main() {
 	http.HandleFunc("/api/posts/bookmarks/check", authRequired(bookmark.CheckBookmark))
 	http.HandleFunc("/api/posts/bookmarks/create", authRequired(bookmark.CreateBookmark))
 	http.HandleFunc("/api/posts/bookmarks/delete", authRequired(bookmark.DeleteBookmark))
+	http.HandleFunc("/api/posts/pictures", authRequired(picture.GetPictures))
+	http.HandleFunc("/api/posts/pictures/upload", authRequired(picture.UploadPicture))
+	http.HandleFunc("/api/posts/pictures/delete", authRequired(picture.DeletePicture))
+	http.HandleFunc("/api/pictures", authRequired(picture.GetPictures))
+	http.HandleFunc("/api/pictures/upload", authRequired(picture.UploadPicture))
+	http.HandleFunc("/api/pictures/delete", authRequired(picture.DeletePicture))
 
 	// Comment endpoints
 	http.HandleFunc("/api/comments", authRequired(comment.GetComments))

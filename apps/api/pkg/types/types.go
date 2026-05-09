@@ -17,3 +17,11 @@ const (
 	GenderMale   Gender = "Male"
 	GenderFemale Gender = "Female"
 )
+
+// OwnerType represents the entity type that owns shared child resources.
+type OwnerType string
+
+const (
+	OwnerTypePost      OwnerType = "post"
+	OwnerTypeCommunity OwnerType = "community"
+)

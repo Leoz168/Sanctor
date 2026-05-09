@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, User, X } from "lucide-react";
-import { useState } from "react";
+import { LogIn, Menu, User, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/navigation/brand-logo";
+import { getCurrentUser, type CurrentUser } from "@/lib/auth-client";
 
 const navItems = [
   { href: "/post-listings", label: "Listings" },
@@ -14,6 +15,27 @@ const navItems = [
 export function SiteHeader() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getCurrentUser()
+      .then((user) => {
+        if (isMounted) {
+          setCurrentUser(user);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setCurrentUser(null);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [pathname]);
 
   const linkClassName = (href: string) =>
     `text-sm font-medium transition-colors ${
@@ -33,14 +55,7 @@ export function SiteHeader() {
               </Link>
             ))}
             <div className="h-4 w-px bg-gray-200" />
-            <Link
-              href="/profile"
-              className="flex items-center gap-2 px-5 py-2.5 bg-brand-orange text-white rounded-full font-medium shadow-md hover:shadow-lg hover:bg-orange-600 transition-all active:scale-95"
-              id="nav-profile"
-            >
-              <User size={18} />
-              <span>My Profile</span>
-            </Link>
+            <AuthNavLink currentUser={currentUser} />
           </div>
 
           <button
@@ -66,16 +81,31 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
-          <Link
-            href="/profile"
-            onClick={() => setIsMenuOpen(false)}
-            className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-brand-orange text-white rounded-full font-medium"
-          >
-            <User size={18} />
-            <span>My Profile</span>
-          </Link>
+          <AuthNavLink currentUser={currentUser} onClick={() => setIsMenuOpen(false)} isMobile />
         </div>
       )}
     </nav>
+  );
+}
+
+interface AuthNavLinkProps {
+  currentUser: CurrentUser | null;
+  onClick?: () => void;
+  isMobile?: boolean;
+}
+
+function AuthNavLink({ currentUser, onClick, isMobile = false }: AuthNavLinkProps) {
+  const href = currentUser ? "/profile" : "/login";
+  const label = currentUser ? currentUser.username : "Login";
+  const Icon = currentUser ? User : LogIn;
+  const className = isMobile
+    ? "w-full flex items-center justify-center gap-2 px-5 py-3 bg-brand-orange text-white rounded-full font-medium"
+    : "flex items-center gap-2 px-5 py-2.5 bg-brand-orange text-white rounded-full font-medium shadow-md hover:shadow-lg hover:bg-orange-600 transition-all active:scale-95";
+
+  return (
+    <Link href={href} onClick={onClick} className={className} id={currentUser ? "nav-profile" : "nav-login"}>
+      <Icon size={18} />
+      <span>{label}</span>
+    </Link>
   );
 }

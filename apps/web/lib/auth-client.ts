@@ -21,6 +21,13 @@ type RegisterPayload = {
   lastName: string;
 };
 
+export type CurrentUser = {
+  id: string;
+  email?: string;
+  username: string;
+  avatar?: string;
+};
+
 function readErrorMessage(data: unknown, fallback: string) {
   if (typeof data === "object" && data !== null && "error" in data && typeof data.error === "string") {
     return data.error;
@@ -49,6 +56,73 @@ async function sendAuthRequest<TPayload>(path: string, payload: TPayload, fallba
 export function persistAuthToken(token: string) {
   localStorage.setItem("authToken", token);
   localStorage.setItem("token", token);
+}
+
+export function getStoredAuthToken() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return (
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("jwt") ||
+    ""
+  );
+}
+
+export function clearStoredAuthToken() {
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("token");
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("jwt");
+}
+
+export function getUserIdFromToken(token: string) {
+  if (!token) {
+    return "";
+  }
+
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) {
+      return "";
+    }
+
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(
+      normalized.length + ((4 - (normalized.length % 4)) % 4),
+      "=",
+    );
+    const parsed = JSON.parse(atob(padded));
+    return typeof parsed.userId === "string" ? parsed.userId : "";
+  } catch {
+    return "";
+  }
+}
+
+export async function getCurrentUser() {
+  const token = getStoredAuthToken();
+  const userId = getUserIdFromToken(token);
+  if (!token || !userId) {
+    return null;
+  }
+
+  const response = await fetch(`${apiBase}/api/users/get?id=${userId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (response.status === 401) {
+    clearStoredAuthToken();
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error("Could not load current user.");
+  }
+
+  return (await response.json()) as CurrentUser;
 }
 
 export async function loginWithPassword(payload: LoginPayload) {

@@ -6,6 +6,8 @@ interface SegmentedControlProps {
   label: string;
   options: string[];
   defaultValue: string;
+  value?: string;
+  onChange?: (value: string) => void;
   size?: "md" | "sm";
 }
 
@@ -13,9 +15,18 @@ export function SegmentedControl({
   label,
   options,
   defaultValue,
+  value,
+  onChange,
   size = "md",
 }: SegmentedControlProps) {
-  const [selected, setSelected] = useState(defaultValue);
+  const [internalSelected, setInternalSelected] = useState(defaultValue);
+  const selected = value ?? internalSelected;
+  const setSelected = (nextValue: string) => {
+    if (value === undefined) {
+      setInternalSelected(nextValue);
+    }
+    onChange?.(nextValue);
+  };
   const isSmall = size === "sm";
 
   return (
