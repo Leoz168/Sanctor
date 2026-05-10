@@ -20,4 +20,8 @@ type Repository interface {
 	IsUserInGroup(userID, groupID uuid.UUID) bool
 	SaveMessage(message *DMMessage) error
 	GetGroupMessages(groupID uuid.UUID, limit int) ([]*DMMessage, error)
+	GetLatestGroupMessage(groupID uuid.UUID) (*DMMessage, error)
+	FindMessageByID(messageID uuid.UUID) (*DMMessage, error)
+	UpdateMessage(message *DMMessage) error
+	DeleteMessage(messageID uuid.UUID) error
 }

@@ -1,17 +1,26 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { Grip, Maximize2, MessageCircle, Minimize2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ContactsList } from "@/components/messages/contacts-list";
 import { ChatWindow } from "@/components/messages/chat-window";
+import { ContactsList } from "@/components/messages/contacts-list";
+import {
+  clearStoredAuthToken,
+  getCurrentUser,
+  getStoredAuthToken,
+  type CurrentUser,
+} from "@/lib/auth-client";
+
+const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 export type Contact = {
   id: string;
   name: string;
   avatar: string;
   online: boolean;
+  peerUserId?: string;
   lastMessage?: string;
   lastMessageTime?: string;
 };
@@ -21,92 +30,21 @@ export type Message = {
   senderId: string;
   text: string;
   timestamp: string;
-  type: "text" | "property";
-  property?: {
-    title: string;
-    price: string;
-    image: string;
-  };
 };
 
-const mockContacts: Contact[] = [
-  {
-    id: "1",
-    name: "Alex Rivera",
-    avatar: "/images/community-1.jpg",
-    online: true,
-    lastMessage: "2:00 PM is perfect. Should I bring any...",
-    lastMessageTime: "10:27 AM",
-  },
-  {
-    id: "2",
-    name: "Sarah Chen",
-    avatar: "/images/community-4.jpg",
-    online: true,
-    lastMessage: "Thanks for the tour yesterday!",
-    lastMessageTime: "Yesterday",
-  },
-  {
-    id: "3",
-    name: "Marcus Thompson",
-    avatar: "/images/community-5.jpg",
-    online: false,
-    lastMessage: "I'll review the documents and get back...",
-    lastMessageTime: "2 days ago",
-  },
-  {
-    id: "4",
-    name: "Elena Rodriguez",
-    avatar: "/images/listing-4.jpg",
-    online: false,
-    lastMessage: "The apartment looks great!",
-    lastMessageTime: "1 week ago",
-  },
-];
+type ConversationSummary = {
+  groupId: string;
+  peerUserId: string;
+  lastMessage?: string;
+  lastMessageTime?: string;
+};
 
-const mockMessages: Record<string, Message[]> = {
-  "1": [
-    {
-      id: "m1",
-      senderId: "1",
-      text: "Hey! I just saw the listing for the downtown apartment. Is it still available for a viewing this Saturday?",
-      timestamp: "10:24 AM",
-      type: "text",
-    },
-    {
-      id: "m2",
-      senderId: "me",
-      text: "Hi Alex! Yes, it is. We have a slot open at 2:00 PM. Does that work for you?",
-      timestamp: "10:26 AM",
-      type: "text",
-    },
-    {
-      id: "m3",
-      senderId: "1",
-      text: "2:00 PM is perfect. Should I bring any specific documents with me?",
-      timestamp: "10:27 AM",
-      type: "text",
-    },
-    {
-      id: "m4",
-      senderId: "1",
-      text: "",
-      timestamp: "10:28 AM",
-      type: "property",
-      property: {
-        title: "Skyline Loft - Unit 402",
-        price: "$2,450 / mo",
-        image: "/images/listing-1.jpg",
-      },
-    },
-    {
-      id: "m5",
-      senderId: "me",
-      text: "Just your ID for now. I'll send over the application forms after the viewing.",
-      timestamp: "10:30 AM",
-      type: "text",
-    },
-  ],
+type DirectMessageResponse = {
+  id: string;
+  groupId: string;
+  userId: string;
+  content: string;
+  messageTime: string;
 };
 
 const defaultPanelSize = { width: 380, height: 600 };
@@ -115,6 +53,7 @@ const minPanelSize = { width: 320, height: 420 };
 const maxPanelSize = { width: 900, height: 760 };
 const panelMargin = 24;
 const dragSensitivity = 1;
+const fallbackAvatar = "/images/community-1.jpg";
 
 type Point = {
   x: number;
@@ -132,14 +71,29 @@ type ResizeDirection = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 export function FloatingMessageButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [contacts] = useState<Contact[]>(mockContacts);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [messagesByGroup, setMessagesByGroup] = useState<Record<string, Message[]>>({});
+  const [contactsError, setContactsError] = useState<string | null>(null);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [isLoadingContacts, setIsLoadingContacts] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [layout, setLayout] = useState<PanelLayout>(() =>
     getDefaultLayout(defaultPanelSize),
   );
 
   const panelRef = useRef<HTMLDivElement | null>(null);
   const liveLayoutRef = useRef<PanelLayout>(layout);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    void loadConversations();
+  }, [isOpen]);
 
   const applyLayout = (nextLayout: PanelLayout) => {
     liveLayoutRef.current = nextLayout;
@@ -178,6 +132,8 @@ export function FloatingMessageButton() {
     setIsOpen(false);
     setIsExpanded(false);
     setSelectedContact(null);
+    setContactsError(null);
+    setChatError(null);
     setLayout(nextLayout);
     liveLayoutRef.current = nextLayout;
   };
@@ -276,6 +232,236 @@ export function FloatingMessageButton() {
     window.addEventListener("pointercancel", stopResize);
   };
 
+  const loadConversations = async () => {
+    const token = getStoredAuthToken();
+    if (!token) {
+      setContactsError("Log in to view your direct messages.");
+      return;
+    }
+
+    setIsLoadingContacts(true);
+    setContactsError(null);
+
+    try {
+      const [user, response] = await Promise.all([
+        getCurrentUser(),
+        fetch(`${apiBase}/api/dm/groups`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+      ]);
+
+      if (response.status === 401 || !user) {
+        clearStoredAuthToken();
+        setContacts([]);
+        setCurrentUser(null);
+        setContactsError("Your session expired. Please log in again.");
+        return;
+      }
+
+      const summaries = (await response.json().catch(() => [])) as ConversationSummary[];
+      if (!response.ok) {
+        throw new Error("Could not load conversations.");
+      }
+
+      const contactsWithUsers = await Promise.all(
+        summaries.map(async (summary) => {
+          let peerName = "Direct conversation";
+          let peerAvatar = fallbackAvatar;
+
+          if (summary.peerUserId) {
+            const peerResponse = await fetch(
+              `${apiBase}/api/users/get?id=${summary.peerUserId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              },
+            );
+
+            if (peerResponse.ok) {
+              const peerUser = (await peerResponse.json()) as Partial<CurrentUser>;
+              peerName = peerUser.username || peerName;
+              peerAvatar = peerUser.avatar || peerAvatar;
+            }
+          }
+
+          return {
+            id: summary.groupId,
+            peerUserId: summary.peerUserId,
+            name: peerName,
+            avatar: peerAvatar,
+            online: false,
+            lastMessage: summary.lastMessage || "No messages yet",
+            lastMessageTime: summary.lastMessageTime
+              ? formatConversationTime(summary.lastMessageTime)
+              : "",
+          } satisfies Contact;
+        }),
+      );
+
+      setCurrentUser(user);
+      setContacts(contactsWithUsers);
+    } catch (error) {
+      setContactsError(
+        error instanceof Error ? error.message : "Could not load conversations.",
+      );
+    } finally {
+      setIsLoadingContacts(false);
+    }
+  };
+
+  const loadMessages = async (contact: Contact) => {
+    const token = getStoredAuthToken();
+    if (!token) {
+      setChatError("Log in to view messages.");
+      return;
+    }
+
+    setSelectedContact(contact);
+    setIsLoadingMessages(true);
+    setChatError(null);
+
+    try {
+      const response = await fetch(
+        `${apiBase}/api/dm/messages?groupId=${contact.id}&limit=100`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (response.status === 401) {
+        clearStoredAuthToken();
+        setChatError("Your session expired. Please log in again.");
+        return;
+      }
+
+      const payload = (await response.json().catch(() => [])) as DirectMessageResponse[];
+      if (!response.ok) {
+        throw new Error("Could not load messages.");
+      }
+
+      setMessagesByGroup((current) => ({
+        ...current,
+        [contact.id]: payload.map(mapMessage),
+      }));
+    } catch (error) {
+      setChatError(error instanceof Error ? error.message : "Could not load messages.");
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
+
+  const refreshSelectedConversation = async () => {
+    if (!selectedContact) {
+      return;
+    }
+
+    await Promise.all([loadMessages(selectedContact), loadConversations()]);
+  };
+
+  const handleSend = async (content: string) => {
+    if (!selectedContact) {
+      return;
+    }
+
+    const token = getStoredAuthToken();
+    if (!token) {
+      setChatError("Log in to send messages.");
+      return;
+    }
+
+    setIsSending(true);
+    setChatError(null);
+
+    try {
+      const response = await fetch(`${apiBase}/api/dm/messages/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          groupId: selectedContact.id,
+          content,
+        }),
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Could not send message.");
+      }
+
+      await refreshSelectedConversation();
+    } catch (error) {
+      setChatError(error instanceof Error ? error.message : "Could not send message.");
+      throw error;
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleUpdateMessage = async (messageId: string, content: string) => {
+    const token = getStoredAuthToken();
+    if (!token) {
+      setChatError("Log in to edit messages.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBase}/api/dm/messages/update?id=${messageId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content }),
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Could not update message.");
+      }
+
+      await refreshSelectedConversation();
+    } catch (error) {
+      setChatError(error instanceof Error ? error.message : "Could not update message.");
+      throw error;
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    const token = getStoredAuthToken();
+    if (!token) {
+      setChatError("Log in to delete messages.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBase}/api/dm/messages/delete?id=${messageId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Could not delete message.");
+      }
+
+      await refreshSelectedConversation();
+    } catch (error) {
+      setChatError(error instanceof Error ? error.message : "Could not delete message.");
+      throw error;
+    }
+  };
+
+  const selectedMessages = selectedContact ? messagesByGroup[selectedContact.id] || [] : [];
+
   return (
     <>
       {!isOpen && (
@@ -341,14 +527,34 @@ export function FloatingMessageButton() {
             {selectedContact ? (
               <ChatWindow
                 contact={selectedContact}
-                messages={mockMessages[selectedContact.id] || []}
-                onBack={() => setSelectedContact(null)}
+                currentUserId={currentUser?.id || ""}
+                messages={selectedMessages}
+                isLoading={isLoadingMessages}
+                isSending={isSending}
+                errorMessage={chatError}
+                onBack={() => {
+                  setSelectedContact(null);
+                  setChatError(null);
+                }}
+                onSend={handleSend}
+                onUpdateMessage={handleUpdateMessage}
+                onDeleteMessage={handleDeleteMessage}
               />
             ) : (
-              <ContactsList
-                contacts={contacts}
-                onSelectContact={setSelectedContact}
-              />
+              <div className="flex h-full flex-col">
+                {contactsError ? (
+                  <div className="border-b border-border bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                    {contactsError}
+                  </div>
+                ) : null}
+                {isLoadingContacts ? (
+                  <div className="px-4 py-4 text-sm font-medium text-muted-foreground">
+                    Loading conversations...
+                  </div>
+                ) : (
+                  <ContactsList contacts={contacts} onSelectContact={(contact) => void loadMessages(contact)} />
+                )}
+              </div>
             )}
           </div>
 
@@ -385,6 +591,41 @@ function ResizeHandle({ direction, onResizeStart }: ResizeHandleProps) {
       aria-label={`Resize messages ${direction}`}
     />
   );
+}
+
+function mapMessage(message: DirectMessageResponse): Message {
+  return {
+    id: message.id,
+    senderId: message.userId,
+    text: message.content,
+    timestamp: formatMessageTime(message.messageTime),
+  };
+}
+
+function formatConversationTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatMessageTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function getDefaultLayout(size: PanelSize): PanelLayout {
