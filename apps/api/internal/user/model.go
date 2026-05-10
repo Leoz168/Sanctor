@@ -69,6 +69,7 @@ type CreateUserRequest struct {
 
 // UpdateUserRequest represents the data that can be updated
 type UpdateUserRequest struct {
+	Username      string             `json:"username,omitempty"`
 	Email         string             `json:"email,omitempty"`
 	Avatar        string             `json:"avatar,omitempty"`
 	Bio           string             `json:"bio,omitempty"`

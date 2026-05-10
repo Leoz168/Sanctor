@@ -4,37 +4,53 @@ const fieldClassName =
 interface ProfileFieldProps {
   label: string;
   value: string;
+  onChange?: (value: string) => void;
   type?: string;
   min?: number;
   max?: number;
+  placeholder?: string;
 }
 
 export function ProfileField({
   label,
   value,
+  onChange,
   type = "text",
   min,
   max,
+  placeholder,
 }: ProfileFieldProps) {
   return (
     <label className="block">
       <FieldLabel>{label}</FieldLabel>
       <input
         type={type}
-        defaultValue={value}
+        value={value}
+        onChange={(event) => onChange?.(event.target.value)}
         min={min}
         max={max}
+        placeholder={placeholder}
         className={fieldClassName}
       />
     </label>
   );
 }
 
-export function GenderSelect() {
+interface GenderSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+export function GenderSelect({ value, onChange }: GenderSelectProps) {
   return (
     <label className="block">
       <FieldLabel>Gender</FieldLabel>
-      <select defaultValue="Male" className={`${fieldClassName} appearance-none`}>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={`${fieldClassName} appearance-none`}
+      >
+        <option value="">Prefer not to say</option>
         <option value="Male">Male</option>
         <option value="Female">Female</option>
       </select>

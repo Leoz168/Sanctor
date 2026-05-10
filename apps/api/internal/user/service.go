@@ -113,13 +113,41 @@ func (s *Service) GetAllUsers() ([]*User, error) {
 
 // UpdateUser updates an existing user
 func (s *Service) UpdateUser(id uuid.UUID, req UpdateUserRequest) (*User, error) {
+	if id == uuid.Nil {
+		return nil, errors.New("user ID is required")
+	}
+
 	user, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, errors.New("user not found")
 	}
 
 	// Update fields if provided
+	if req.Username != "" && req.Username != user.Username {
+		if err := ValidateUsername(req.Username); err != nil {
+			return nil, err
+		}
+		if s.repo.ExistsByUsername(req.Username) {
+			return nil, errors.New("username already taken")
+		}
+		user.Username = req.Username
+	}
 	if req.Email != "" {
+		if !ValidateEmail(req.Email) {
+			return nil, errors.New("invalid email format")
+		}
+		if req.Email != user.Email {
+			blacklisted, err := s.repo.IsEmailBlacklisted(req.Email)
+			if err != nil {
+				return nil, err
+			}
+			if blacklisted {
+				return nil, ErrEmailBlacklisted
+			}
+			if s.repo.ExistsByEmail(req.Email) {
+				return nil, errors.New("user with this email already exists")
+			}
+		}
 		user.Email = req.Email
 	}
 	if req.Avatar != "" {
@@ -155,6 +183,21 @@ func (s *Service) UpdateUser(id uuid.UUID, req UpdateUserRequest) (*User, error)
 	}
 
 	return user, nil
+}
+
+// GetCurrentUser retrieves the authenticated user.
+func (s *Service) GetCurrentUser(id uuid.UUID) (*User, error) {
+	return s.GetUser(id)
+}
+
+// UpdateCurrentUser updates the authenticated user.
+func (s *Service) UpdateCurrentUser(id uuid.UUID, req UpdateUserRequest) (*User, error) {
+	return s.UpdateUser(id, req)
+}
+
+// DeleteCurrentUser deletes the authenticated user.
+func (s *Service) DeleteCurrentUser(id uuid.UUID) error {
+	return s.DeleteUser(id)
 }
 
 // DeleteUser deletes a user by ID

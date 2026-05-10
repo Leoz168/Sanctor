@@ -9,6 +9,15 @@ import (
 	"github.com/google/uuid"
 )
 
+func currentUserIDFromContext(r *http.Request) (uuid.UUID, error) {
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok || userID == "" {
+		return uuid.Nil, http.ErrNoCookie
+	}
+
+	return uuid.Parse(userID)
+}
+
 // Initialize repository and service (defaults to in-memory)
 var (
 	repo    Repository = NewRepository()
@@ -167,6 +176,112 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := service.DeleteUser(userID); err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// HandleCurrentUser routes self-service profile requests for the authenticated user.
+func HandleCurrentUser(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		GetCurrentUser(w, r)
+	case http.MethodPut:
+		UpdateCurrentUser(w, r)
+	case http.MethodDelete:
+		DeleteCurrentUser(w, r)
+	case http.MethodOptions:
+		enableCORS(&w)
+		w.WriteHeader(http.StatusOK)
+	default:
+		enableCORS(&w)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// GetCurrentUser returns the authenticated user.
+func GetCurrentUser(w http.ResponseWriter, r *http.Request) {
+	enableCORS(&w)
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, err := currentUserIDFromContext(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := service.GetCurrentUser(userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(user)
+}
+
+// UpdateCurrentUser updates the authenticated user.
+func UpdateCurrentUser(w http.ResponseWriter, r *http.Request) {
+	enableCORS(&w)
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "PUT" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, err := currentUserIDFromContext(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req UpdateUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	user, err := service.UpdateCurrentUser(userID, req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	json.NewEncoder(w).Encode(user)
+}
+
+// DeleteCurrentUser deletes the authenticated user.
+func DeleteCurrentUser(w http.ResponseWriter, r *http.Request) {
+	enableCORS(&w)
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "DELETE" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID, err := currentUserIDFromContext(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := service.DeleteCurrentUser(userID); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
