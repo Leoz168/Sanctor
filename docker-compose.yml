@@ -1,6 +1,21 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sanctor-postgres
+    environment:
+      - POSTGRES_DB=sanctor
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - sanctor-network
+    restart: unless-stopped
+
   backend-tests:
     build:
       context: ./apps/api
@@ -29,10 +44,13 @@ services:
     environment:
       - GO_ENV=production
       - PORT=8080
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/sanctor?sslmode=disable
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
     depends_on:
       backend-tests:
         condition: service_completed_successfully
+      postgres:
+        condition: service_started
       redis:
         condition: service_started
     networks:
@@ -48,8 +66,10 @@ services:
       - .env
     environment:
       - GO_ENV=production
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/sanctor?sslmode=disable
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
     depends_on:
+      - postgres
       - redis
     networks:
       - sanctor-network
@@ -88,3 +108,4 @@ networks:
 
 volumes:
   redis-data:
+  postgres-data:

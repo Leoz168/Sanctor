@@ -60,7 +60,7 @@ export function ProfileCommunityCard({
         </div>
 
         <p className="mt-3 text-[13px] font-semibold italic leading-5 text-gray-500">
-          "{description}"
+          &ldquo;{description}&rdquo;
         </p>
 
         <div className="mt-auto flex items-center justify-between border-t border-orange-100/70 pt-5">

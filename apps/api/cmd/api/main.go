@@ -151,6 +151,7 @@ func main() {
 	// User endpoints
 	http.HandleFunc("/api/users", authRequired(user.GetUsers))
 	http.HandleFunc("/api/users/get", authRequired(user.GetUser))
+	http.HandleFunc("/api/users/me", authRequired(user.HandleCurrentUser))
 	http.HandleFunc("/api/users/create", authRequired(authHandler.Register))
 	http.HandleFunc("/api/users/update", authRequired(user.UpdateUser))
 	http.HandleFunc("/api/users/delete", authRequired(user.DeleteUser))

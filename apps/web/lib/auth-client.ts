@@ -23,9 +23,14 @@ type RegisterPayload = {
 
 export type CurrentUser = {
   id: string;
-  email?: string;
+  email: string;
   username: string;
   avatar?: string;
+  bio?: string;
+  gender?: string;
+  age?: number | null;
+  institutionId?: string | null;
+  major?: string | null;
 };
 
 function readErrorMessage(data: unknown, fallback: string) {
@@ -104,12 +109,11 @@ export function getUserIdFromToken(token: string) {
 
 export async function getCurrentUser() {
   const token = getStoredAuthToken();
-  const userId = getUserIdFromToken(token);
-  if (!token || !userId) {
+  if (!token) {
     return null;
   }
 
-  const response = await fetch(`${apiBase}/api/users/get?id=${userId}`, {
+  const response = await fetch(`${apiBase}/api/users/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
