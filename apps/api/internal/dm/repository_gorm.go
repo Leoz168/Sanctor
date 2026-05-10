@@ -2,6 +2,7 @@ package dm
 
 import (
 	"database/sql"
+	"errors"
 
 	"sanctor/internal/database"
 
@@ -104,4 +105,33 @@ func (r *GormRepository) GetGroupMessages(groupID uuid.UUID, limit int) ([]*DMMe
 		return nil, err
 	}
 	return messages, nil
+}
+
+func (r *GormRepository) GetLatestGroupMessage(groupID uuid.UUID) (*DMMessage, error) {
+	var message DMMessage
+	err := r.db.Where("group_id = ?", groupID).Order("message_time desc").First(&message).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &message, nil
+}
+
+func (r *GormRepository) FindMessageByID(messageID uuid.UUID) (*DMMessage, error) {
+	var message DMMessage
+	err := r.db.Where("id = ?", messageID).First(&message).Error
+	if err != nil {
+		return nil, err
+	}
+	return &message, nil
+}
+
+func (r *GormRepository) UpdateMessage(message *DMMessage) error {
+	return r.db.Save(message).Error
+}
+
+func (r *GormRepository) DeleteMessage(messageID uuid.UUID) error {
+	return r.db.Delete(&DMMessage{}, "id = ?", messageID).Error
 }

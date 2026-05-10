@@ -73,7 +73,7 @@ func main() {
 			defer db.Close()
 
 			// Run auto-migration for all models
-			if err := db.AutoMigrate(&user.User{}, &community.Community{}, &community.UserCommunity{}, &community.CommunityInstitution{}, &post.Post{}, &post.PostCommunity{}, &post.PostInstitution{}, &bookmark.Bookmark{}, &comment.Comment{}, &picture.Picture{}, &institution.Institution{}, &blocking.UserBlock{}); err != nil {
+			if err := db.AutoMigrate(&user.User{}, &community.Community{}, &community.UserCommunity{}, &community.CommunityInstitution{}, &post.Post{}, &post.PostCommunity{}, &post.PostInstitution{}, &bookmark.Bookmark{}, &comment.Comment{}, &picture.Picture{}, &institution.Institution{}, &blocking.UserBlock{}, &dm.DMGroup{}, &dm.DMGroupUser{}, &dm.DMMessage{}); err != nil {
 				log.Printf("⚠️  Failed to migrate database: %v", err)
 			}
 
@@ -87,6 +87,7 @@ func main() {
 			bookmark.InitWithDatabase(db)
 			blocking.InitWithDatabase(db)
 			comment.InitWithDatabase(db)
+			dm.InitWithDatabase(db)
 			picture.InitWithDatabase(db, appConfig.Supabase)
 			log.Println("✅ Database initialized successfully")
 		}
@@ -150,6 +151,7 @@ func main() {
 
 	// User endpoints
 	http.HandleFunc("/api/users", authRequired(user.GetUsers))
+	http.HandleFunc("/api/users/search", authRequired(user.SearchUsers))
 	http.HandleFunc("/api/users/get", authRequired(user.GetUser))
 	http.HandleFunc("/api/users/me", authRequired(user.HandleCurrentUser))
 	http.HandleFunc("/api/users/create", authRequired(authHandler.Register))
@@ -182,6 +184,8 @@ func main() {
 	http.HandleFunc("/api/dm/groups", authRequired(dm.GetUserGroups))
 	http.HandleFunc("/api/dm/messages", authRequired(dm.GetMessages))
 	http.HandleFunc("/api/dm/messages/send", authRequired(dm.SendMessage))
+	http.HandleFunc("/api/dm/messages/update", authRequired(dm.UpdateMessage))
+	http.HandleFunc("/api/dm/messages/delete", authRequired(dm.DeleteMessage))
 	http.HandleFunc("/api/dm/ws", dm.HandleWebSocket)
 
 	// Institution endpoints

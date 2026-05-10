@@ -14,6 +14,15 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+func currentUserIDFromContext(r *http.Request) (uuid.UUID, error) {
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok || userID == "" {
+		return uuid.Nil, http.ErrNoCookie
+	}
+
+	return uuid.Parse(userID)
+}
+
 var (
 	repo     Repository = NewRepository()
 	service             = NewService(repo)
@@ -48,9 +57,9 @@ func CreateDirectGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := uuid.Parse(strings.TrimSpace(req.UserID))
+	userID, err := currentUserIDFromContext(r)
 	if err != nil {
-		http.Error(w, "invalid userId format", http.StatusBadRequest)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 	peerUserID, err := uuid.Parse(strings.TrimSpace(req.PeerUserID))
@@ -77,13 +86,12 @@ func GetUserGroups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.URL.Query().Get("userId")
-	userUUID, err := uuid.Parse(strings.TrimSpace(userID))
+	userUUID, err := currentUserIDFromContext(r)
 	if err != nil {
-		http.Error(w, "invalid userId format", http.StatusBadRequest)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	groups, err := service.GetUserGroups(userUUID)
+	groups, err := service.GetUserConversations(userUUID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -111,7 +119,13 @@ func SendMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message, err := service.SendMessage(req)
+	userID, err := currentUserIDFromContext(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	message, err := service.SendMessage(userID, req)
 	if err != nil {
 		if errors.Is(err, ErrNotDMMember) {
 			http.Error(w, err.Error(), http.StatusForbidden)
@@ -136,7 +150,6 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	groupID := r.URL.Query().Get("groupId")
-	userID := r.URL.Query().Get("userId")
 	limitStr := r.URL.Query().Get("limit")
 
 	limit := 50
@@ -146,9 +159,9 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	userUUID, err := uuid.Parse(strings.TrimSpace(userID))
+	userUUID, err := currentUserIDFromContext(r)
 	if err != nil {
-		http.Error(w, "invalid userId format", http.StatusBadRequest)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 	groupUUID, err := uuid.Parse(strings.TrimSpace(groupID))
@@ -169,6 +182,86 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(messages)
+}
+
+func UpdateMessage(w http.ResponseWriter, r *http.Request) {
+	enableCORS(&w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodPut {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	messageID, err := uuid.Parse(strings.TrimSpace(r.URL.Query().Get("id")))
+	if err != nil {
+		http.Error(w, "invalid message id format", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := currentUserIDFromContext(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req UpdateMessageRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	message, err := service.UpdateMessage(userID, messageID, req.Content)
+	if err != nil {
+		if errors.Is(err, ErrNotDMMember) {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(message)
+}
+
+func DeleteMessage(w http.ResponseWriter, r *http.Request) {
+	enableCORS(&w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	messageID, err := uuid.Parse(strings.TrimSpace(r.URL.Query().Get("id")))
+	if err != nil {
+		http.Error(w, "invalid message id format", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := currentUserIDFromContext(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := service.DeleteMessage(userID, messageID); err != nil {
+		if errors.Is(err, ErrNotDMMember) {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
@@ -228,9 +321,8 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		message, err := service.SendMessage(SendMessageRequest{
+		message, err := service.SendMessage(userUUID, SendMessageRequest{
 			GroupID: groupID,
-			UserID:  userID,
 			Content: payload.Content,
 		})
 		if err != nil {

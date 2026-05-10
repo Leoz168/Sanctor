@@ -1,6 +1,7 @@
 package dm
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/google/uuid"
@@ -159,4 +160,68 @@ func (r *InMemoryRepository) GetGroupMessages(groupID uuid.UUID, limit int) ([]*
 	out := make([]*DMMessage, len(messages[start:]))
 	copy(out, messages[start:])
 	return out, nil
+}
+
+func (r *InMemoryRepository) GetLatestGroupMessage(groupID uuid.UUID) (*DMMessage, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	groupKey := groupID.String()
+	if _, ok := r.groups[groupKey]; !ok {
+		return nil, ErrDMGroupNotFound
+	}
+
+	messages := r.groupMessage[groupKey]
+	if len(messages) == 0 {
+		return nil, nil
+	}
+
+	return messages[len(messages)-1], nil
+}
+
+func (r *InMemoryRepository) FindMessageByID(messageID uuid.UUID) (*DMMessage, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, messages := range r.groupMessage {
+		for _, message := range messages {
+			if message.ID == messageID {
+				return message, nil
+			}
+		}
+	}
+
+	return nil, errors.New("message not found")
+}
+
+func (r *InMemoryRepository) UpdateMessage(message *DMMessage) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	groupKey := message.GroupID.String()
+	messages := r.groupMessage[groupKey]
+	for index, existing := range messages {
+		if existing.ID == message.ID {
+			r.groupMessage[groupKey][index] = message
+			return nil
+		}
+	}
+
+	return errors.New("message not found")
+}
+
+func (r *InMemoryRepository) DeleteMessage(messageID uuid.UUID) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for groupKey, messages := range r.groupMessage {
+		for index, message := range messages {
+			if message.ID == messageID {
+				r.groupMessage[groupKey] = append(messages[:index], messages[index+1:]...)
+				return nil
+			}
+		}
+	}
+
+	return errors.New("message not found")
 }

@@ -111,3 +111,25 @@ func TestCurrentUserMethodsDelegateToGenericCRUD(t *testing.T) {
 		t.Fatalf("expected current user delete to succeed, got %v", err)
 	}
 }
+
+func TestSearchUsersExcludesCurrentUserAndMatchesByUsername(t *testing.T) {
+	repo := &userStub{}
+	svc := NewService(repo)
+
+	currentUser := &User{ID: uuid.New(), Email: "self@example.com", Username: "self"}
+	otherUser := &User{ID: uuid.New(), Email: "alex@example.com", Username: "alexrivera"}
+
+	repo.created = currentUser
+	memRepo := NewRepository().(*InMemoryRepository)
+	_ = memRepo.Create(currentUser)
+	_ = memRepo.Create(otherUser)
+	svc = NewService(memRepo)
+
+	results, err := svc.SearchUsers("alex", currentUser.ID)
+	if err != nil {
+		t.Fatalf("expected search to succeed, got %v", err)
+	}
+	if len(results) != 1 || results[0].ID != otherUser.ID {
+		t.Fatalf("expected only alex to be returned, got %+v", results)
+	}
+}

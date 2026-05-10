@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -109,6 +110,30 @@ func (s *Service) GetUser(id uuid.UUID) (*User, error) {
 // GetAllUsers retrieves all users
 func (s *Service) GetAllUsers() ([]*User, error) {
 	return s.repo.FindAll(), nil
+}
+
+// SearchUsers searches users by username or email and excludes the current user.
+func (s *Service) SearchUsers(query string, excludeUserID uuid.UUID) ([]*PublicUser, error) {
+	trimmed := strings.TrimSpace(strings.ToLower(query))
+	if trimmed == "" {
+		return []*PublicUser{}, nil
+	}
+
+	allUsers := s.repo.FindAll()
+	results := make([]*PublicUser, 0)
+	for _, user := range allUsers {
+		if user == nil || user.ID == excludeUserID {
+			continue
+		}
+
+		username := strings.ToLower(user.Username)
+		email := strings.ToLower(user.Email)
+		if strings.Contains(username, trimmed) || strings.Contains(email, trimmed) {
+			results = append(results, user.ToPublicUser())
+		}
+	}
+
+	return results, nil
 }
 
 // UpdateUser updates an existing user

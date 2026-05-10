@@ -25,15 +25,25 @@ type DMMessage struct {
 	Content     string    `json:"content" gorm:"type:text;not null"`
 	MessageTime time.Time `json:"messageTime" gorm:"index;not null"`
 	CreatedAt   time.Time `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt   time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
 type CreateDirectGroupRequest struct {
-	UserID     string `json:"userId"`
 	PeerUserID string `json:"peerUserId"`
 }
 
 type SendMessageRequest struct {
 	GroupID string `json:"groupId"`
-	UserID  string `json:"userId"`
 	Content string `json:"content"`
+}
+
+type UpdateMessageRequest struct {
+	Content string `json:"content"`
+}
+
+type ConversationSummary struct {
+	GroupID         uuid.UUID  `json:"groupId"`
+	PeerUserID      uuid.UUID  `json:"peerUserId"`
+	LastMessage     string     `json:"lastMessage,omitempty"`
+	LastMessageTime *time.Time `json:"lastMessageTime,omitempty"`
 }
