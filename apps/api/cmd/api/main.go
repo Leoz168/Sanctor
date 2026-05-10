@@ -87,6 +87,7 @@ func main() {
 			bookmark.InitWithDatabase(db)
 			blocking.InitWithDatabase(db)
 			comment.InitWithDatabase(db)
+			dm.InitWithDatabase(db)
 			picture.InitWithDatabase(db, appConfig.Supabase)
 			log.Println("✅ Database initialized successfully")
 		}
@@ -150,6 +151,7 @@ func main() {
 
 	// User endpoints
 	http.HandleFunc("/api/users", authRequired(user.GetUsers))
+	http.HandleFunc("/api/users/search", authRequired(user.SearchUsers))
 	http.HandleFunc("/api/users/get", authRequired(user.GetUser))
 	http.HandleFunc("/api/users/me", authRequired(user.HandleCurrentUser))
 	http.HandleFunc("/api/users/create", authRequired(authHandler.Register))

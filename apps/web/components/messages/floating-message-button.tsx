@@ -25,6 +25,12 @@ export type Contact = {
   lastMessageTime?: string;
 };
 
+export type SearchUser = {
+  id: string;
+  name: string;
+  avatar: string;
+};
+
 export type Message = {
   id: string;
   senderId: string;
@@ -75,6 +81,9 @@ export function FloatingMessageButton() {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [messagesByGroup, setMessagesByGroup] = useState<Record<string, Message[]>>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [contactsError, setContactsError] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
   const [isLoadingContacts, setIsLoadingContacts] = useState(false);
@@ -94,6 +103,78 @@ export function FloatingMessageButton() {
 
     void loadConversations();
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const token = getStoredAuthToken();
+    const trimmed = searchQuery.trim();
+    if (!token || trimmed.length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    let isMounted = true;
+    const timeoutId = window.setTimeout(() => {
+      void (async () => {
+        setIsSearching(true);
+        try {
+          const response = await fetch(
+            `${apiBase}/api/users/search?q=${encodeURIComponent(trimmed)}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          );
+
+          if (response.status === 401) {
+            clearStoredAuthToken();
+            if (isMounted) {
+              setSearchResults([]);
+            }
+            return;
+          }
+
+          const payload = (await response.json().catch(() => [])) as Array<{
+            id: string;
+            username: string;
+            avatar?: string;
+          }>;
+
+          if (!response.ok) {
+            throw new Error("Could not search users.");
+          }
+
+          if (isMounted) {
+            setSearchResults(
+              payload.map((user) => ({
+                id: user.id,
+                name: user.username,
+                avatar: user.avatar || fallbackAvatar,
+              })),
+            );
+          }
+        } catch {
+          if (isMounted) {
+            setSearchResults([]);
+          }
+        } finally {
+          if (isMounted) {
+            setIsSearching(false);
+          }
+        }
+      })();
+    }, 250);
+
+    return () => {
+      isMounted = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [isOpen, searchQuery]);
 
   const applyLayout = (nextLayout: PanelLayout) => {
     liveLayoutRef.current = nextLayout;
@@ -322,6 +403,8 @@ export function FloatingMessageButton() {
     setSelectedContact(contact);
     setIsLoadingMessages(true);
     setChatError(null);
+    setSearchQuery("");
+    setSearchResults([]);
 
     try {
       const response = await fetch(
@@ -361,6 +444,62 @@ export function FloatingMessageButton() {
     }
 
     await Promise.all([loadMessages(selectedContact), loadConversations()]);
+  };
+
+  const handleStartConversation = async (user: SearchUser) => {
+    const existingContact = contacts.find((contact) => contact.peerUserId === user.id);
+    if (existingContact) {
+      await loadMessages(existingContact);
+      return;
+    }
+
+    const token = getStoredAuthToken();
+    if (!token) {
+      setContactsError("Log in to start a conversation.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBase}/api/dm/groups/direct`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          peerUserId: user.id,
+        }),
+      });
+
+      const payload = (await response.json().catch(() => null)) as { id?: string } | null;
+      if (!response.ok || !payload?.id) {
+        throw new Error("Could not start conversation.");
+      }
+
+      const nextContact: Contact = {
+        id: payload.id,
+        peerUserId: user.id,
+        name: user.name,
+        avatar: user.avatar,
+        online: false,
+        lastMessage: "No messages yet",
+        lastMessageTime: "",
+      };
+
+      setContacts((current) => {
+        if (current.some((contact) => contact.id === nextContact.id)) {
+          return current;
+        }
+        return [nextContact, ...current];
+      });
+
+      await loadMessages(nextContact);
+      void loadConversations();
+    } catch (error) {
+      setContactsError(
+        error instanceof Error ? error.message : "Could not start conversation.",
+      );
+    }
   };
 
   const handleSend = async (content: string) => {
@@ -552,7 +691,15 @@ export function FloatingMessageButton() {
                     Loading conversations...
                   </div>
                 ) : (
-                  <ContactsList contacts={contacts} onSelectContact={(contact) => void loadMessages(contact)} />
+                  <ContactsList
+                    contacts={contacts}
+                    searchQuery={searchQuery}
+                    searchResults={searchResults}
+                    isSearching={isSearching}
+                    onSearchChange={setSearchQuery}
+                    onSelectContact={(contact) => void loadMessages(contact)}
+                    onSelectSearchResult={(user) => void handleStartConversation(user)}
+                  />
                 )}
               </div>
             )}
